@@ -36,14 +36,14 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
     if (step !== "pay" && step !== "wait") return;
     const onMsg = (e: MessageEvent) => { const id = (e.data && (e.data.event_id || e.data.eventName)) || ""; if (String(id).includes("ORDER_SUCCESSFUL") || String(id).includes("ORDER_COMPLETED")) setStep("wait"); };
     window.addEventListener("message", onMsg);
-    const t = setInterval(async () => { if (!addr) return; const b = await chain.pub.getBalance({ address: addr as Address }).catch(() => 0n); setBal(b); if (needSei != null && b >= BigInt(Math.ceil(needSei * 1e18))) setStep("confirm"); }, 5000);
+    const t = setInterval(async () => { if (!addr) return; const b = await chain.pub.getBalance({ address: addr as Address }).catch(() => 0n); setBal(b); if (needSei != null && b >= BigInt(Math.ceil(needSei * 1e18))) { clearInterval(t); buyRef.current(); } }, 5000);
     return () => { window.removeEventListener("message", onMsg); clearInterval(t); };
   }, [step, addr, needSei]);
 
   const begin = async () => {
     setErr(null);
-    if (!addr) { await connect(); return; }
-    const b = await chain.pub.getBalance({ address: addr as Address }).catch(() => 0n);
+    let a = addr; if (!a) { await connect(); try { a = await chain.connect(); } catch { return; } }
+    const b = await chain.pub.getBalance({ address: a as Address }).catch(() => 0n);
     start.current = b; setBal(b); setStep("pay");
   };
   const buy = async () => {
@@ -55,6 +55,7 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
       setRcpt({ hash: h, got: after - before, sei: Number(formatEther(cost ?? 0n)) }); setStep("done"); onDone();
     } catch (e) { setErr((e as Error).message.split("\n")[0]); setStep("confirm"); }
   };
+  const buyRef = useRef(buy); buyRef.current = buy;
   const idx = STEPS.findIndex(([s]) => s.includes(step));
 
   return <div className="pd-mbody cb">
@@ -76,7 +77,7 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
       <div className="pd-err cb-jp">日本にお住まいの方は、現在カード購入をご利用いただけません。{tzJp && " お使いの端末は日本時間に設定されています。"}</div>
       <label className="pd-fine cb-chk"><input type="checkbox" checked={notJp} onChange={(e) => setNotJp(e.target.checked)} /> 私は日本の居住者ではありません（I am not a resident of Japan）</label>
       {isPlaceholderKey() && <small className="pd-fine">⚠ テスト用の仮APIキーです（Transak STAGING、実際の請求はありません）。</small>}
-      <button className="pd-buy" disabled={!notJp || total == null} onClick={begin}>{addr ? `${n} PATRONを買う（カード / Apple Pay）` : "ウォレットを接続して続ける"}</button>
+      <button className="pd-buy" disabled={!notJp || total == null} onClick={begin}>{`${n} PATRONを買う（カード / Apple Pay）`}</button>
     </>}
 
     {(step === "pay" || step === "wait") && <>
@@ -85,18 +86,18 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
       {step === "pay" && addr && total != null && <iframe className="cb-tk" title="Transak" src={transakUrl(addr, total)} allow="camera;microphone;payment" />}
       {step === "pay" && addr && total != null && <a className="pd-fine" href={transakUrl(addr, total)} target="_blank" rel="noreferrer">決済画面が表示されない場合は、別タブで開く ↗</a>}
       <div className="pd-fine">{step === "wait" ? "お支払い完了。ウォレットへの着金を待っています…" : "着金を確認中…"} 残高 {f4(Number(formatEther(bal)))} / 必要 {needSei == null ? "…" : f4(needSei)} SEI</div>
-      {enough && <button className="pd-buy" onClick={() => setStep("confirm")}>PATRONの受け取りへ進む</button>}
+      {enough && <button className="pd-buy" onClick={buy}>PATRONの受け取りへ進む</button>}
     </>}
 
     {(step === "confirm" || step === "buying") && <>
       <em>最後の確認：<b>{n} PATRON</b>を、届いたSEI <b>{curveSei == null ? "" : f4(curveSei)}</b>（上限）でカーブから購入します。</em>
-      <small className="pd-fine">MetaMaskで承認してください（PATRONのカーブ購入トランザクション、Sei テストネット）。</small>
+      <small className="pd-fine">SEIの着金を確認したので、MetaMaskの承認画面を自動で開きました（PATRONのカーブ購入トランザクション、Sei テストネット）。承認画面が閉じた場合は下のボタンで開き直せます。</small>
       <button className="pd-buy" disabled={step === "buying"} onClick={buy}>{step === "buying" ? "ウォレットで承認中…" : `承認して ${n} PATRON を受け取る`}</button>
     </>}
 
     {step === "done" && rcpt && <>
       <div className="cb-rcpt"><small>領収</small><b>{rcpt.got} PATRON</b><span>受け取りました</span></div>
-      <dl className="pd-dl"><dt>商品</dt><dd>$PATRON（Edition 0）</dd><dt>支払ったSEI（カーブ代金）</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>カード決済</dt><dd>Transak経由（領収はTransakからメールで届きます）</dd><dt>取引</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">エクスプローラーで見る ↗</a></dd></dl>
+      <dl className="pd-dl"><dt>商品</dt><dd>$PATRON（Edition 0）</dd><dt>支払ったSEI（カーブ代金）</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>カード決済</dt><dd>Transak経由（領収はTransakからメールで届きます）</dd><dt>ウォレット表示</dt><dd><a onClick={() => chain.watchPatron()}>PATRONをウォレットに表示 ↗</a></dd><dt>取引</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">エクスプローラーで見る ↗</a></dd></dl>
     </>}
     {err && <div className="pd-err">{err}</div>}
   </div>;

@@ -94,3 +94,46 @@ export async function connect(): Promise<string> {
   const [a] = (await e.request({ method: "eth_requestAccounts" })) as string[];
   return a;
 }
+
+/* ---------- Pay with USDC in ONE transaction (EIP-2612 permit + PatronRouter). TESTNET. ---------- */
+export const USDC_ROUTES = {
+  USDC: { token: "0x4fCF1784B31630811181f670Aea7A7bEF803eaED" as Address, router: (process.env.NEXT_PUBLIC_ROUTER_USDC || "0x8d76eb17Bbc2b95594141D9C06229ac8656FA94A") as Address, label: "USDC (Circle testnet)" },
+  mUSDC: { token: "0x15828F985E1d5A47d663b2AB635158a3fbbC035C" as Address, router: (process.env.NEXT_PUBLIC_ROUTER_MUSDC || "0xcFC9a7b57c1Ad3d4d7c3c974A98064AA17941768") as Address, label: "mUSDC (test faucet)" },
+} as const;
+export type UsdcKind = keyof typeof USDC_ROUTES;
+const routerAbi = parseAbi([
+  "function quote(uint256 amount) view returns (uint256 usdcIn, uint256 seiIn)",
+  "function buyWithPermit(uint256 amount, uint256 maxUsdc, uint256 deadline, uint8 v, bytes32 r, bytes32 s)",
+  "function buy(uint256 amount, uint256 maxUsdc)",
+]);
+const permitAbi = parseAbi([
+  "function name() view returns (string)", "function version() view returns (string)",
+  "function nonces(address) view returns (uint256)", "function allowance(address,address) view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)", "function faucet(uint256)",
+]);
+export const quoteUsdc = (k: UsdcKind, n: number) => pub.readContract({ address: USDC_ROUTES[k].router, abi: routerAbi, functionName: "quote", args: [BigInt(n)] });
+export const usdcBalance = (k: UsdcKind, a: Address) => pub.readContract({ address: USDC_ROUTES[k].token, abi: permitAbi, functionName: "balanceOf", args: [a] });
+export const mintTestUsdc = () => send((w) => w.writeContract({ address: USDC_ROUTES.mUSDC.token, abi: permitAbi, functionName: "faucet", args: [100_000_000n], account: w.account!, chain: PATRON_CHAIN }));
+/** 1 off-chain signature (permit, free) + 1 tx. If allowance already covers it: just the tx. Never an approve tx. */
+export async function buyUsdc(k: UsdcKind, n: number) {
+  const { token, router } = USDC_ROUTES[k];
+  const [q] = await quoteUsdc(k, n); const max = q + q / 100n + 1n;
+  const w = await wallet(); const me = w.account!.address;
+  const al = await pub.readContract({ address: token, abi: permitAbi, functionName: "allowance", args: [me, router] });
+  if (al >= max) return send((w) => w.writeContract({ address: router, abi: routerAbi, functionName: "buy", args: [BigInt(n), max], account: w.account!, chain: PATRON_CHAIN }));
+  const [name, version, nonce] = await Promise.all([
+    pub.readContract({ address: token, abi: permitAbi, functionName: "name" }),
+    pub.readContract({ address: token, abi: permitAbi, functionName: "version" }).catch(() => "1"),
+    pub.readContract({ address: token, abi: permitAbi, functionName: "nonces", args: [me] }),
+  ]);
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
+  const sig = await w.signTypedData({
+    account: w.account!, domain: { name, version, chainId: PATRON_CHAIN.id, verifyingContract: token },
+    types: { Permit: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }, { name: "value", type: "uint256" }, { name: "nonce", type: "uint256" }, { name: "deadline", type: "uint256" }] },
+    primaryType: "Permit", message: { owner: me, spender: router, value: max, nonce, deadline },
+  });
+  const r = ("0x" + sig.slice(2, 66)) as `0x${string}`, s = ("0x" + sig.slice(66, 130)) as `0x${string}`; let v = parseInt(sig.slice(130, 132), 16); if (v < 27) v += 27;
+  return send((w) => w.writeContract({ address: router, abi: routerAbi, functionName: "buyWithPermit", args: [BigInt(n), max, deadline, v, r, s], account: w.account!, chain: PATRON_CHAIN }));
+}
+/** Optional: show PATRON in the wallet (one prompt, no address copy-paste). */
+export const watchPatron = () => eth()?.request({ method: "wallet_watchAsset", params: { type: "ERC20", options: { address: TOKEN as Address, symbol: "PATRON", decimals: 0 } } } as never);

@@ -20,6 +20,8 @@ export function transakUrl(wallet: string, fiatUsd: number) {
     apiKey: CARD.transakApiKey, network: "sei", cryptoCurrencyCode: "SEI", walletAddress: wallet,
     disableWalletAddressForm: "true", fiatCurrency: "USD", fiatAmount: String(Math.ceil(fiatUsd)),
     productsAvailed: "BUY", themeColor: "ff0047",
+    // fewer clicks: amount/asset/network/wallet are fixed by us, so skip Transak's quote screen + menu
+    hideExchangeScreen: "true", hideMenu: "true",
   });
   return `${CARD.transakBase}/?${p}`;
 }

@@ -60,8 +60,8 @@ export default function PatronDrop() {
   };
   const flash = (m: string, link?: string) => { setToast(m); setTxLink(link || null); setTimeout(() => setToast(null), 6000); };
   const [txLink, setTxLink] = useState<string | null>(null);
-  const runBuy = async (n: number, v: number) => {
-    if (LIVE) { const h = await chain.buy(n); await refresh(); setMode(null); flash(`TESTNET: bought ${n} $PATRON`, chain.explorerTx(h)); return; }
+  const runBuy = async (n: number, v: number, pay?: string) => {
+    if (LIVE) { const h = pay === "USDC" || pay === "mUSDC" ? await chain.buyUsdc(pay, n) : await chain.buy(n); if (!addr) setAddr(await connectWallet()); await refresh(); setMode(null); flash(`TESTNET: bought ${n} $PATRON`, chain.explorerTx(h)); return; }
     await new Promise((r) => setTimeout(r, 900));
     save({ ...st, pool: st.pool - n, held: st.held + n }); setMode(null); flash(`DEMO: bought ${n} $PATRON for ${fmt(v)}`);
   };
@@ -137,14 +137,17 @@ function Stepper({ n, set, max }: { n: number; set: (n: number) => void; max: nu
   return <div className="pd-step"><button onClick={() => set(Math.max(1, n - 1))}>-</button><span>{n}</span><button onClick={() => set(Math.min(max, n + 1))}>+</button></div>;
 }
 
-function Trade({ kind, st, addr, connect, onDone }: { kind: "buy" | "sell"; st: St; addr: string | null; connect: () => void; onDone: (n: number, v: number) => Promise<void> }) {
+function Trade({ kind, st, addr, connect, onDone }: { kind: "buy" | "sell"; st: St; addr: string | null; connect: () => void; onDone: (n: number, v: number, pay?: string) => Promise<void> }) {
   const [n, setN] = useState(1);
-  const [pay, setPay] = useState("USDC");
+  const [pay, setPay] = useState(LIVE ? "SEI" : "USDC");
+  const [uq, setUq] = useState<bigint | null>(null);
+  useEffect(() => { if (!LIVE || kind !== "buy" || pay === "SEI") return setUq(null); let on = true; chain.quoteUsdc(pay as chain.UsdcKind, n).then(([q]) => on && setUq(q)).catch(() => on && setUq(null)); return () => { on = false; }; }, [pay, n, kind]);
+  const usdcPay = LIVE && kind === "buy" && pay !== "SEI";
   const [busy, setBusy] = useState(false);
   const max = kind === "buy" ? Math.max(1, st.pool - 1) : Math.max(1, st.held);
   const v = kind === "buy" ? buyCost(st.pool, n) : sellGain(st.pool, n);
   const [err, setErr] = useState<string | null>(null);
-  const go = async () => { setBusy(true); setErr(null); try { await onDone(n, v); } catch (e) { setErr((e as Error).message.split("\n")[0]); } setBusy(false); };
+  const go = async () => { setBusy(true); setErr(null); try { await onDone(n, v, pay); } catch (e) { setErr((e as Error).message.split("\n")[0]); } setBusy(false); };
   return <>
     <div className="pd-mcard">
       <div className="pd-mh">{kind === "buy" ? "Pay" : "Sell"} <span className={`pd-demo ${LIVE ? "live" : ""}`}>{TAG}</span></div>
@@ -153,13 +156,14 @@ function Trade({ kind, st, addr, connect, onDone }: { kind: "buy" | "sell"; st: 
     </div>
     <div className="pd-mbody">
       <em>{kind === "buy" ? "How do you want to pay?" : "What do you want to receive?"}</em>
-      <select className="pd-sel" value={LIVE ? "SEI" : pay} onChange={(e) => setPay(e.target.value)} disabled={LIVE}>
-        {(LIVE ? ["SEI"] : ["USDC", "SEI", "ETH"]).map((t) => <option key={t} value={t}>{LIVE ? "Testnet SEI" : t}</option>)}
+      <select className="pd-sel" value={pay} onChange={(e) => setPay(e.target.value)} disabled={LIVE && kind !== "buy"}>
+        {(LIVE ? (kind === "buy" ? ["SEI", "USDC", "mUSDC"] : ["SEI"]) : ["USDC", "SEI", "ETH"]).map((t) => <option key={t} value={t}>{LIVE ? (t === "SEI" ? "Testnet SEI" : chain.USDC_ROUTES[t as chain.UsdcKind].label) : t}</option>)}
       </select>
       <small className="pd-fine">Includes 0.3% curve fee · avg {fmt(v / n)} each</small>
-      {!addr ? <button className="pd-buy" onClick={connect}>Connect Wallet</button>
+      {!addr && !(LIVE && kind === "buy") ? <button className="pd-buy" onClick={connect}>Connect Wallet</button>
         : <button className="pd-buy" disabled={busy || !isFinite(v)} onClick={go}>{busy ? (LIVE ? "Confirm in wallet…" : "Confirming (demo)…") : `${kind === "buy" ? "Buy" : "Sell"} ${n} $PATRON (${TAG.toLowerCase()})`}</button>}
-      {LIVE && <small className="pd-fine">1% slippage protection{kind === "sell" ? "; first sell asks for an approve tx" : ""}.</small>}
+      {usdcPay && <small className="pd-fine">≈ {uq == null ? "…" : (Number(uq) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 4 })} {pay} · one free signature (permit, no approve tx) + one transaction{pay === "mUSDC" && <> · <a onClick={() => chain.mintTestUsdc().catch((e) => setErr((e as Error).message.split("\n")[0]))}>get 100 test mUSDC</a></>}{pay === "USDC" && <> · <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">USDC faucet</a></>}</small>}
+      {LIVE && <small className="pd-fine">1% slippage protection{kind === "sell" ? "; first sell asks for an approve tx" : ""}{kind === "buy" && !addr ? " · wallet connects and switches to Sei testnet automatically" : ""}.</small>}
       {err && <div className="pd-err">{err}</div>}
     </div>
   </>;
