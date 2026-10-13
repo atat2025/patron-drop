@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as chain from "@/lib/patronChain";
 import { formatEther } from "viem";
 import Mustache from "./Mustache";
+import { Countdown, FarmingGauge } from "./DropMeters";
 import { loadFills, type Fill } from "@/lib/launchHistory";
 
 /* Unisocks-style constant-product curve (x*y=k), priced client-side in USD. DEMO ONLY. */
@@ -93,6 +94,8 @@ export default function PatronDrop() {
             <button className="pd-stats" onClick={() => setMode("stats")}><em>Dynamic Pricing Stats</em><span>?</span></button>
           </div>
         </section>
+        <Countdown />
+        <FarmingGauge />
         <div className="pd-info">Buy and sell a limited mustache token. Redeem it for a PATRON reward. <a onClick={() => setMode("stats")}>Learn more</a>
           {addr && <div className="pd-bal">You hold <b>{st.held}</b> $PATRON</div>}
           {LIVE && <div className="pd-net">Sei EVM Testnet (atlantic-2 · 1328) · <a href={chain.explorerAddr(chain.MARKET)} target="_blank" rel="noreferrer">contract</a> · <a onClick={() => chain.addSeiTestnet().catch((e) => flash((e as Error).message))}>Add Sei testnet</a> · <a href="https://docs.sei.io/learn/faucet" target="_blank" rel="noreferrer">faucet</a></div>}

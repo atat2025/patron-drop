@@ -184,3 +184,14 @@ html, body { margin: 0; background: #fff; }
 .lf-tbl { background:#f1f2f6; border-radius:8px; padding:6px 14px; } .lf-tbl div { display:grid; grid-template-columns:1fr 1fr 1fr; padding:8px 0; font-size:14px; border-bottom:1px solid #e4e5ea; } .lf-tbl div:last-child { border:0; } .lf-tbl span:last-child { text-align:right; color:#666; }
 .lf-terms { grid-template-columns:repeat(4,1fr); } .lf-agree { font-size:13px; display:flex; gap:6px; align-items:center; } .lf-done { margin-top:0; border-radius:8px; } .lf-done .pd-sec { margin-top:10px; padding:0 18px; }
 .ux-pt { margin-top:0; }
+/* ---- countdown + gauge ---- */
+.dm-cd, .dm-g { background:#f1f2f6; border-radius:8px; padding:14px 16px; }
+.dm-h { display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:500; margin-bottom:10px; } .dm-h small { color:#888; font-weight:400; font-size:12px; } .dm-h b { color:var(--pd-red); }
+.dm-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.dm-grid div { background:linear-gradient(162deg,#2a2a2a,#000 70%); color:#fff; border-radius:8px; padding:10px 0 8px; text-align:center; }
+.dm-grid b { display:block; font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; } .dm-grid small { font-size:10px; color:#8a8a99; letter-spacing:.06em; text-transform:uppercase; }
+.dm-ended { font-size:18px; font-weight:500; text-align:center; padding:8px 0; color:var(--pd-red); }
+.dm-bar { height:10px; border-radius:6px; background:#e2e3e9; overflow:hidden; } .dm-bar i { display:block; height:100%; background:linear-gradient(90deg,#ff0047,#ff5c86); border-radius:6px; transition:width .6s; }
+.dm-g small { display:block; margin-top:8px; font-size:13px; color:#666; }
+@media (max-width:480px) { .dm-grid b { font-size:20px; } }
+a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-style:normal; color:#999; }
