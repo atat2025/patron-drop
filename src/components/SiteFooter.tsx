@@ -8,7 +8,6 @@ export default function SiteFooter() {
         <Link href="/twins">Digital Twin Market <i>Soon</i></Link>
         <Link href="/markets">Spot・Perp Market</Link>
         <Link href="/exchange">PATRON PERP Exchange</Link>
-        <Link href="/lending">Creator Financing</Link>
       </nav>
       <p>© PATRON · Sei testnet · Powered by Monaco</p>
     </footer>
