@@ -210,3 +210,11 @@ a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-styl
 .dm-hist { margin-top:8px; font-size:12px; } .dm-hist summary { cursor:pointer; color:#666; } .dm-hist div { display:flex; flex-direction:column; padding:5px 0; border-bottom:1px solid #e2e3e9; } .dm-hist span { color:#999; }
 .dm-g.ad { display:flex; flex-direction:column; gap:8px; } .dm-g.ad input { height:44px; border:0; border-radius:8px; padding:0 12px; font-size:15px; font-family:inherit; background:#fff; }
 .kl-err { color:#ff0047; font-size:13px; } .ad-h { font-size:15px; font-weight:500; margin:10px 0 0; }
+/* Card purchase flow */
+.cb-steps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:13px; color:#999; }
+.cb-steps li { display:flex; gap:8px; align-items:center; } .cb-steps b { width:20px; height:20px; border-radius:50%; background:#f1f2f6; display:inline-flex; align-items:center; justify-content:center; font-size:11px; }
+.cb-steps li.on { color:#000; font-weight:600; } .cb-steps li.on b { background:#ff0047; color:#fff; } .cb-steps li.ok b { background:#2ecc71; color:#fff; }
+.cb-n { padding:0; } .cb-chk { display:flex; gap:8px; align-items:center; } .cb-jp { color:#7a4b00; background:#fff4dc; }
+.cb-tk { width:100%; height:560px; border:0; border-radius:8px; background:#f1f2f6; }
+.cb-rcpt { display:flex; flex-direction:column; align-items:center; padding:16px; background:#f1f2f6; border-radius:8px; } .cb-rcpt b { font-size:32px; color:#ff0047; } .cb-rcpt small,.cb-rcpt span { color:#777; font-size:13px; }
+.pd-sec.cb-open { width:100%; height:48px; margin-top:-4px; }
