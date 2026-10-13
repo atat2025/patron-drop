@@ -195,3 +195,18 @@ html, body { margin: 0; background: #fff; }
 .dm-g small { display:block; margin-top:8px; font-size:13px; color:#666; }
 @media (max-width:480px) { .dm-grid b { font-size:20px; } }
 a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-style:normal; color:#999; }
+/* ---- liquidity gauge ---- */
+.dm-seg { position:relative; display:flex; overflow:visible; }
+.dm-seg i { display:block; height:100%; border-radius:0; } .dm-seg i:first-child { border-radius:6px 0 0 6px; }
+.dm-seg i.on, .dm-leg i.on { background:linear-gradient(90deg,#ff0047,#ff5c86); }
+.dm-seg i.op, .dm-leg i.op { background:repeating-linear-gradient(45deg,#111 0 4px,#555 4px 8px); }
+.dm-tick { position:absolute; top:-3px; bottom:-3px; width:2px; background:#111; transform:translateX(-1px); }
+.dm-leg { margin-top:10px; font-size:13px; display:flex; flex-direction:column; gap:4px; }
+.dm-leg div { display:flex; align-items:center; gap:6px; } .dm-leg b { margin-left:auto; font-variant-numeric:tabular-nums; }
+.dm-leg i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+.dm-note { margin:0 0 0 18px; font-size:12px; color:#666; } .dm-tot { border-top:1px solid #e2e3e9; padding-top:6px; }
+.dm-stages { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; } .dm-stages span { font-size:11px; background:#e2e3e9; border-radius:4px; padding:3px 6px; color:#666; } .dm-stages span.ok { background:#111; color:#fff; }
+.dm-g a { color:var(--pd-red); }
+.dm-hist { margin-top:8px; font-size:12px; } .dm-hist summary { cursor:pointer; color:#666; } .dm-hist div { display:flex; flex-direction:column; padding:5px 0; border-bottom:1px solid #e2e3e9; } .dm-hist span { color:#999; }
+.dm-g.ad { display:flex; flex-direction:column; gap:8px; } .dm-g.ad input { height:44px; border:0; border-radius:8px; padding:0 12px; font-size:15px; font-family:inherit; background:#fff; }
+.kl-err { color:#ff0047; font-size:13px; } .ad-h { font-size:15px; font-weight:500; margin:10px 0 0; }

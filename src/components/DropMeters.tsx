@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatEther } from "viem";
 import * as V from "@/lib/vaultChain";
+import { readGauge, yen, SEI_JPY, GAUGE, type GaugeData } from "@/lib/gauge";
 
 const TARGET = process.env.NEXT_PUBLIC_COUNTDOWN_TARGET || "2026-11-30T00:00:00+09:00";
 const LABEL = process.env.NEXT_PUBLIC_COUNTDOWN_LABEL || "Listing in";
@@ -20,6 +21,42 @@ export function Countdown() {
       <div className="dm-h"><span>{ended ? "Live now" : LABEL}</span><small>{new Date(t).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "medium", timeStyle: "short" })} JST</small></div>
       {ended ? <div className="dm-ended">🎉 Listing has started</div> :
         <div className="dm-grid">{parts.map((p, i) => <div key={i}><b>{p}</b><small>{["Days", "Hours", "Min", "Sec"][i]}</small></div>)}</div>}
+    </div>
+  );
+}
+
+/** Staged liquidity goal (JPY). On-chain value and operator-added value are shown as separate, labeled segments. */
+export function LiquidityGauge() {
+  const [d, setD] = useState<GaugeData | null>(null);
+  useEffect(() => { const load = () => readGauge().then(setD).catch(() => {}); load(); const i = setInterval(load, 20000); return () => clearInterval(i); }, []);
+  if (!d) return <div className="dm-g"><div className="dm-h"><span>流動性ゴール / Liquidity goal</span></div><small>Loading…</small></div>;
+  const total = d.onchainJPY + d.manualJPY;
+  const reached = d.stages.filter((s) => total >= s).length;
+  const next = d.stages[reached];
+  const prev = reached ? d.stages[reached - 1] : 0;
+  const scale = next ?? d.stages[d.stages.length - 1];
+  const pctNext = next ? Math.min(100, ((total - prev) / (next - prev)) * 100) : 100;
+  const w = (x: number) => `${Math.min(100, (x / scale) * 100)}%`;
+  return (
+    <div className="dm-g">
+      <div className="dm-h"><span>流動性ゴール · {next ? `Stage ${reached + 1}` : "All stages reached"}</span><b>{next ? `${pctNext.toFixed(1)}% to next` : "100%"}</b></div>
+      <div className="dm-bar dm-seg">
+        <i className="on" style={{ width: w(d.onchainJPY) }} title="On-chain" />
+        <i className="op" style={{ width: w(d.manualJPY) }} title="運営による追加分" />
+        {d.stages.map((s, k) => s <= scale && <span key={k} className="dm-tick" style={{ left: w(s) }} />)}
+      </div>
+      <div className="dm-leg">
+        <div><i className="on" />オンチェーン（Vault TVL）<b>{yen(d.onchainJPY)}</b></div>
+        <div><i className="op" />運営による追加分<b>{yen(d.manualJPY)}</b></div>
+        {d.note && <p className="dm-note">運営メモ: {d.note}</p>}
+        <div className="dm-tot">合計 <b>{yen(total)}</b>{next && <> / 次のステージ {yen(next)}</>}</div>
+      </div>
+      <div className="dm-stages">{d.stages.map((s, k) => <span key={k} className={total >= s ? "ok" : ""}>Stage {k + 1}: {yen(s)}</span>)}</div>
+      <small>On-chain: {d.tvlPAT.toLocaleString("en-US", { maximumFractionDigits: 2 })} PAT in <Link href="/vault/">PatronVault</Link> × PAT {d.patSEI.toPrecision(3)} SEI (PatronLaunch) × SEI/JPY {SEI_JPY} <em>（仮）</em>. Sei testnet.</small>
+      <details className="dm-hist"><summary>変更履歴 / Change history ({d.history.length})</summary>
+        {d.history.length ? d.history.map((h, k) => <div key={k}><span>{new Date(h.at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}</span>{h.kind === 1 ? <b>運営追加分 → {yen(h.amountJPY)}{h.note && ` (${h.note})`}</b> : <b>ステージ → {h.stages.map(yen).join(" / ")}</b>}</div>) : <p>No changes</p>}
+        <a href={`https://seitrace.com/address/${GAUGE}?chain=atlantic-2`} target="_blank" rel="noreferrer">GaugeConfig contract</a>
+      </details>
     </div>
   );
 }
