@@ -29,7 +29,7 @@ export function Countdown() {
 export function LiquidityGauge() {
   const [d, setD] = useState<GaugeData | null>(null);
   useEffect(() => { const load = () => readGauge().then(setD).catch(() => {}); load(); const i = setInterval(load, 20000); return () => clearInterval(i); }, []);
-  if (!d) return <div className="dm-g"><div className="dm-h"><span>流動性ゴール / Liquidity goal</span></div><small>Loading…</small></div>;
+  if (!d) return <div className="dm-g"><div className="dm-h"><span>予約・応援額を含む目標</span></div><small>Loading…</small></div>;
   const total = d.onchainJPY + d.manualJPY;
   const reached = d.stages.filter((s) => total >= s).length;
   const next = d.stages[reached];
@@ -39,17 +39,17 @@ export function LiquidityGauge() {
   const w = (x: number) => `${Math.min(100, (x / scale) * 100)}%`;
   return (
     <div className="dm-g">
-      <div className="dm-h"><span>流動性ゴール · {next ? `Stage ${reached + 1}` : "All stages reached"}</span><b>{next ? `${pctNext.toFixed(1)}% to next` : "100%"}</b></div>
+      <div className="dm-h"><span>予約・応援額を含む目標 · {next ? `Stage ${reached + 1}` : "All stages reached"}</span><b>{next ? `${pctNext.toFixed(1)}% to next` : "100%"}</b></div>
       <div className="dm-bar dm-seg">
-        <i className="on" style={{ width: w(d.onchainJPY) }} title="On-chain" />
-        <i className="op" style={{ width: w(d.manualJPY) }} title="運営による追加分" />
+        <i className="on" style={{ width: w(total) }} title="予約・応援額を含む合計" />
         {d.stages.map((s, k) => s <= scale && <span key={k} className="dm-tick" style={{ left: w(s) }} />)}
       </div>
       <div className="dm-leg">
         <div><i className="on" />オンチェーン（Vault TVL）<b>{yen(d.onchainJPY)}</b></div>
-        <div><i className="op" />運営による追加分<b>{yen(d.manualJPY)}</b></div>
+        <div><i className="on" />予約・応援額<b>{yen(d.manualJPY)}</b></div>
         {d.note && <p className="dm-note">運営メモ: {d.note}</p>}
         <div className="dm-tot">合計 <b>{yen(total)}</b>{next && <> / 次のステージ {yen(next)}</>}</div>
+        <p className="dm-note">※予約・応援でいただいた額を含みます。ブロックチェーン上の購入額とは異なります。</p>
       </div>
       <div className="dm-stages">{d.stages.map((s, k) => <span key={k} className={total >= s ? "ok" : ""}>Stage {k + 1}: {yen(s)}</span>)}</div>
       <small>On-chain: {d.tvlPAT.toLocaleString("en-US", { maximumFractionDigits: 2 })} PAT in <Link href="/vault/">PatronVault</Link> × PAT {d.patSEI.toPrecision(3)} SEI (PatronLaunch) × SEI/JPY {SEI_JPY} <em>（仮）</em>. Sei testnet.</small>
