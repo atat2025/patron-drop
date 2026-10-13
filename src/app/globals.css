@@ -120,3 +120,67 @@ html, body { margin: 0; background: #fff; }
 .pv-inp.sm { height:38px; flex:1; } .pv-inp.sm input { font-size:14px; } .pd-sec.sm { height:38px; padding:0 14px; }
 .pv-ok { font-size:12px; color:#1a8f4c; background:#e7f6ec; border-radius:6px; padding:8px 10px; } .pv-ok a { color:#1a8f4c; }
 .pv-wd:disabled { opacity:.5; }
+/* ---- PATRON footer / coming soon / markets (Unisocks style) ---- */
+.pf { border-top:1px solid #eee; margin-top:30px; padding:22px 16px 30px; text-align:center; background:#fff; color:#111; font-family:var(--sans); }
+.pf nav { display:flex; flex-wrap:wrap; gap:8px 22px; justify-content:center; }
+.pf a { color:#111; text-decoration:none; font-weight:500; font-size:14px; }
+.pf a:hover { color:#ff0047; }
+.pf a i { font-style:normal; font-size:10px; background:#f1f2f6; border-radius:4px; padding:2px 5px; margin-left:4px; color:#888; }
+.pf p { font-size:12px; color:#999; margin-top:12px; }
+.cs-art { display:flex; justify-content:center; padding:40px 0; color:#fff; }
+.cs-btn { display:flex; align-items:center; justify-content:center; text-decoration:none; }
+.mk-h h1 { font-size:28px; margin:12px 0; }
+.mk-c { display:flex; flex-direction:column; gap:4px; padding:20px; border-radius:8px; background:#f1f2f6; color:#111; text-decoration:none; }
+.mk-c span { color:#666; font-size:14px; } .mk-c em { font-style:normal; font-size:13px; color:#888; }
+.mk-c.live { background:linear-gradient(90deg,#ff0047,#ff5c86); color:#fff; box-shadow:0 8px 24px rgba(255,0,71,.3); }
+.mk-c.live span, .mk-c.live em { color:#fff; }
+
+/* ---- /exchange in Unisocks style ---- */
+.ux-main { max-width:1180px; margin:0 auto; padding:0 16px 20px; }
+.ux-net { font-size:13px; color:#888; margin-right:10px; }
+.ux-head { display:flex; flex-wrap:wrap; align-items:center; gap:12px 18px; margin:6px 0 16px; }
+.ux-head h1 { font-size:28px; font-weight:500; margin:0; }
+.ux-seg, .ux-seg2, .ux-seg3 { display:inline-flex; background:#f1f2f6; border-radius:8px; padding:3px; }
+.ux-seg button, .ux-seg2 button, .ux-seg3 button { border:0; background:transparent; padding:8px 16px; border-radius:6px; font-size:14px; cursor:pointer; color:#555; font-family:inherit; }
+.ux-seg button.on, .ux-seg3 button.on { background:#111; color:#fff; }
+.ux-seg2 { display:grid; grid-template-columns:1fr 1fr; } .ux-seg3 { display:grid; grid-template-columns:1fr 1fr; }
+.ux-seg2 button.on.b { background:#00a86b; color:#fff; } .ux-seg2 button.on.s { background:#ff0047; color:#fff; }
+.ux-pill { font-size:12px; padding:4px 10px; border-radius:20px; background:#f1f2f6; color:#888; } .ux-pill.ok { color:#00a86b; }
+.ux-grid { display:grid; grid-template-columns:200px 1fr 300px; grid-template-areas:"mk chart order" "mk book trades" "acct acct acct"; gap:10px; }
+.ux-card { background:#f1f2f6; border-radius:8px; padding:14px; min-width:0; }
+.ux-dark { background:linear-gradient(162deg,#2a2a2a,#000 70%); color:#fff; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+.ux-mk { grid-area:mk; display:flex; flex-direction:column; gap:2px; max-height:760px; overflow:auto; }
+.ux-mk button { display:grid; grid-template-columns:1fr auto; border:0; background:transparent; text-align:left; padding:8px; border-radius:6px; cursor:pointer; font-family:inherit; color:#111; }
+.ux-mk button.on { background:#fff; } .ux-mk em { font-style:normal; font-size:12px; grid-column:2; }
+.ux-mk span { font-size:13px; color:#666; text-align:right; }
+.ux-chart { grid-area:chart; } .ux-order { grid-area:order; display:flex; flex-direction:column; gap:10px; }
+.ux-book { grid-area:book; } .ux-trades { grid-area:trades; } .ux-acct { grid-area:acct; }
+.ux-ph { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.ux-ph h2 { font-size:17px; font-weight:500; margin:0; } .ux-ph small { color:#8a8a99; font-size:13px; }
+.ux-cbox { height:320px; }
+.ux-inp { display:flex; align-items:center; background:#fff; border-radius:8px; padding:0 12px; height:46px; gap:8px; }
+.ux-inp span { font-size:13px; color:#888; width:64px; } .ux-inp em { font-style:normal; color:#888; font-size:13px; }
+.ux-inp input, .ux-inp select, .ux-dep input, .ux-dep select { flex:1; border:0; outline:0; font-size:16px; background:transparent; font-family:inherit; min-width:0; }
+.ux-bh, .ux-lv, .ux-tr { display:grid; grid-template-columns:1fr 1fr; font-size:13px; padding:3px 4px; position:relative; font-variant-numeric:tabular-nums; }
+.ux-tr { grid-template-columns:1fr 1fr 1fr; } .ux-bh { color:#888; }
+.ux-lv i { position:absolute; right:0; top:0; bottom:0; opacity:.12; } .ux-lv.up i { background:#00a86b; } .ux-lv.dn i { background:#ff0047; }
+.ux .up { color:#00a86b; } .ux .dn { color:#ff0047; }
+.ux-lv span:last-child, .ux-tr span:last-child { text-align:right; }
+.ux-mid { text-align:center; font-weight:600; padding:6px; }
+.ux-mut { color:#888; font-size:13px; } .ux-mut a { color:#ff0047; }
+.ux-acct h3 { font-size:14px; margin:14px 0 6px; }
+.ux-row { display:flex; gap:16px; align-items:center; font-size:14px; padding:6px 0; border-bottom:1px solid #e4e5ea; }
+.ux-dep { display:flex; gap:8px; align-items:center; } .ux-dep select, .ux-dep input { background:#fff; border-radius:8px; height:46px; padding:0 12px; }
+.ux-dep .pd-sec { padding:0 22px; background:#111; color:#fff; }
+.ux-link { border:0; background:transparent; color:#ff0047; cursor:pointer; font-size:13px; }
+.ux-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; } .ux-cards button { border:0; text-align:left; cursor:pointer; font:inherit; }
+.ux-patron { display:grid; grid-template-columns:minmax(0,420px) 1fr; gap:16px; align-items:start; }
+.ux-vault { min-width:0; }
+@media (max-width: 900px) { .ux-grid { grid-template-columns:1fr; grid-template-areas:"mk" "chart" "order" "book" "trades" "acct"; } .ux-mk { max-height:220px; } .ux-patron, .ux-cards { grid-template-columns:1fr; } }
+/* ---- /lending ---- */
+.lf-big { display:flex; flex-direction:column; margin-top:24px; } .lf-big b { font-size:34px; font-weight:500; } .lf-big small { color:#8a8a99; }
+.lf-inp { background:#f1f2f6; } .lf-inp input[type=range] { accent-color:#ff0047; }
+.lf-chips { display:flex; flex-wrap:wrap; gap:6px; } .lf-chips button { border:0; border-radius:20px; padding:7px 12px; background:#f1f2f6; cursor:pointer; font:inherit; font-size:13px; } .lf-chips button.on { background:#111; color:#fff; }
+.lf-tbl { background:#f1f2f6; border-radius:8px; padding:6px 14px; } .lf-tbl div { display:grid; grid-template-columns:1fr 1fr 1fr; padding:8px 0; font-size:14px; border-bottom:1px solid #e4e5ea; } .lf-tbl div:last-child { border:0; } .lf-tbl span:last-child { text-align:right; color:#666; }
+.lf-terms { grid-template-columns:repeat(4,1fr); } .lf-agree { font-size:13px; display:flex; gap:6px; align-items:center; } .lf-done { margin-top:0; border-radius:8px; } .lf-done .pd-sec { margin-top:10px; padding:0 18px; }
+.ux-pt { margin-top:0; }
