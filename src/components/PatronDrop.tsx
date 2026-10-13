@@ -4,6 +4,7 @@ import * as chain from "@/lib/patronChain";
 import { formatEther } from "viem";
 import Mustache from "./Mustache";
 import CardBuy from "./CardBuy";
+import EasyLogin from "./EasyLogin";
 import { Countdown, LiquidityGauge } from "./DropMeters";
 import { loadFills, type Fill } from "@/lib/launchHistory";
 
@@ -23,7 +24,7 @@ const buyCost = (r: number, n: number) => (n <= 0 || n >= r ? Infinity : (reserv
 const sellGain = (r: number, n: number) => (n <= 0 ? 0 : (reserveOf(r) - reserveOf(r + n)) * (1 - FEE));
 const fmt = (n: number) => (!isFinite(n) ? "—" : LIVE ? n.toLocaleString("en-US", { maximumFractionDigits: 4 }) + " SEI" : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-type Mode = null | "card" | "buy" | "sell" | "redeem" | "stats";
+type Mode = null | "easy" | "card" | "buy" | "sell" | "redeem" | "stats";
 interface St { pool: number; held: number; redeemed: number }
 const KEY = "patron-drop-demo";
 
@@ -103,6 +104,7 @@ export default function PatronDrop() {
           {chainErr && <div className="pd-err">{chainErr}</div>}
         </div>
         <button className="pd-buy" onClick={() => setMode("buy")}>Buy</button>
+        {LIVE && <button className="pd-sec cb-open" style={{ fontSize: 20 }} onClick={() => setMode("easy")}>かんたんログインで買う（ウォレット不要）<br /><small>テストネット専用・実際のお金は使えません</small></button>}
         {LIVE && <button className="pd-sec cb-open" onClick={() => setMode("card")}>カード / Apple PayでPATRONを買う</button>}
         <div className="pd-row">
           <button className="pd-sec" disabled={!addr || st.held < 1} onClick={() => setMode("sell")}>Sell</button>
@@ -117,6 +119,7 @@ export default function PatronDrop() {
 
       {mode && <div className="pd-ov" onClick={() => setMode(null)}>
         <div className="pd-modal" onClick={(e) => e.stopPropagation()}>
+          {mode === "easy" && <EasyLogin onAddr={(a) => { setAddr(a); refresh(a); }} onDone={() => refresh()} />}
           {mode === "card" && <CardBuy addr={addr} connect={connect} max={Math.max(1, st.pool - 1)} onDone={() => refresh()} />}
           {mode === "buy" && <Trade kind="buy" st={st} addr={addr} connect={connect} onDone={runBuy} />}
           {mode === "sell" && <Trade kind="sell" st={st} addr={addr} connect={connect} onDone={runSell} />}
