@@ -1,150 +1,160 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { formatEther, parseEther, type Address } from "viem";
-import * as V from "@/lib/vaultChain";
+import * as S from "@/lib/strategyVaults";
+import { NET, isTestnet, explorerTx, explorerAddr } from "@/lib/network";
 
-// DEMO DATA ONLY: fictional strategies, simulated P&L. No real funds.
-type Stage = "live" | "forward" | "candidate" | "parked";
-type Strat = { id: string; name: string; agent: string; market: string; stage: Stage; net: number; pf: number; dd: number; trades: number; seed: number };
-const STAGE: Record<Stage, [string, string]> = { live: ["Live", "#1a8f4c"], forward: ["Forward testing", "#2f6fed"], candidate: ["Candidate", "#e0a800"], parked: ["Parked", "#9a9aa5"] };
-const STRATS: Strat[] = [
-  { id: "s1", name: "Night Owl Momentum", agent: "Agent A · LLM-1 (demo)", market: "SEI/USDC perp", stage: "live", net: 18.4, pf: 1.92, dd: 6.1, trades: 214, seed: 3 },
-  { id: "s2", name: "Mean Revert Lite", agent: "Agent B · LLM-2 (demo)", market: "PAT/SEI spot", stage: "live", net: 9.7, pf: 1.41, dd: 4.3, trades: 512, seed: 7 },
-  { id: "s3", name: "Funding Harvester", agent: "Agent C · rules+LLM (demo)", market: "BTC perp", stage: "forward", net: 5.2, pf: 1.33, dd: 2.8, trades: 88, seed: 11 },
-  { id: "s4", name: "Breakout Scout", agent: "Agent D · LLM-3 (demo)", market: "ETH perp", stage: "forward", net: -2.1, pf: 0.91, dd: 9.4, trades: 61, seed: 5 },
-  { id: "s5", name: "Range Weaver", agent: "Agent E · LLM-1 (demo)", market: "SEI/USDC perp", stage: "candidate", net: 12.0, pf: 1.58, dd: 7.7, trades: 140, seed: 13 },
-  { id: "s6", name: "Volatility Sleeper", agent: "Agent F · LLM-2 (demo)", market: "PAT/SEI spot", stage: "parked", net: -6.8, pf: 0.72, dd: 14.2, trades: 39, seed: 17 },
-];
-const curve = (s: Strat, n = 40) => { let v = 100, r = s.seed; const out = [v]; for (let i = 1; i < n; i++) { r = (r * 9301 + 49297) % 233280; v += (r / 233280 - 0.5) * 4 + s.net / n; out.push(v); } return out; };
-function Spark({ s, w = 120, h = 34, big = false }: { s: Strat; w?: number; h?: number; big?: boolean }) {
-  const d = curve(s, big ? 80 : 40); const mn = Math.min(...d), mx = Math.max(...d);
-  const pts = d.map((v, i) => `${(i / (d.length - 1)) * w},${h - ((v - mn) / (mx - mn || 1)) * (h - 4) - 2}`).join(" ");
-  const col = s.net >= 0 ? "#1a8f4c" : "#ff0047";
+/* PATRON Vault: real on-chain strategy vaults (PatronStrategyVault) on the PATRON Edition 0 curve.
+   NAV, trades and charts are read from the contracts; the keeper log (reasons + tx links) comes from the keeper job. */
+const NAMES = S.META;
+const f4 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 });
+const sei = (v: bigint) => f4(Number(formatEther(v)));
+const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
+const ago = (t: number) => { const s = Math.max(0, Math.floor(Date.now() / 1000 - t)); return s < 3600 ? `${Math.max(1, Math.floor(s / 60))}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`; };
+const KIND = ["checkpoint", "Buy", "Sell", "Deposit", "Withdraw"];
+const LABEL = NET.labelJa;
+
+function stats(v: S.VaultView) {
+  const series = [...v.recs.map((r) => Number(r.ppsNano) / 1e9), Number(v.pps) / 1e18];
+  let peak = series[0] || 1, dd = 0;
+  for (const x of series) { peak = Math.max(peak, x); dd = Math.max(dd, (peak - x) / peak); }
+  const trades = v.recs.filter((r) => r.kind === 1 || r.kind === 2);
+  return { series, ret: ((Number(v.pps) / 1e18) - 1) * 100, dd: dd * 100, trades: trades.length, last: trades.length ? trades[trades.length - 1].time : 0 };
+}
+
+function Spark({ d, w = 120, h = 34, big = false }: { d: number[]; w?: number; h?: number; big?: boolean }) {
+  const pts0 = d.length > 1 ? d : [d[0] ?? 1, d[0] ?? 1];
+  const mn = Math.min(...pts0), mx = Math.max(...pts0);
+  const pts = pts0.map((v, i) => `${(i / (pts0.length - 1)) * w},${h - ((v - mn) / (mx - mn || 1)) * (h - 4) - 2}`).join(" ");
+  const col = pts0[pts0.length - 1] >= pts0[0] ? "#1a8f4c" : "#ff0047";
   return <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="pv-spark"><polyline points={pts} fill="none" stroke={col} strokeWidth={big ? 1.6 : 1.4} vectorEffect="non-scaling-stroke" />{big && <polygon points={`0,${h} ${pts} ${w},${h}`} fill={col} opacity=".08" />}</svg>;
 }
-const Dot = ({ st }: { st: Stage }) => <i className="pv-dot" style={{ background: STAGE[st][1], boxShadow: "none" }} />;
-const sidNum = (id: string) => Number(id.slice(1));
-const fmtPat = (v: bigint) => Number(formatEther(v)).toLocaleString("en-US", { maximumFractionDigits: 2 });
-const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
-const FEED = ["opened long SEI/USDC", "closed PAT/SEI +0.8%", "trimmed ETH short", "took profit BTC +1.2%", "stopped out ETH −0.6%", "rebalanced PAT/SEI"];
+const Dot = ({ on }: { on: boolean }) => <i className="pv-dot" style={{ background: on ? "#1a8f4c" : "#bbb", boxShadow: "none" }} />;
 
 export function Vault() {
-  const [amt, setAmt] = useState("10000");
-  const [sid, setSid] = useState("s1");
+  const [amt, setAmt] = useState("0.05");
+  const [sid, setSid] = useState(NET.vaults[0]?.id || "");
   const [confirm, setConfirm] = useState(false);
   const [user, setUser] = useState<Address | null>(null);
-  const [ch, setCh] = useState<Awaited<ReturnType<typeof V.readVault>> | null>(null);
+  const [vs, setVs] = useState<S.VaultView[] | null>(null);
+  const [log, setLog] = useState<S.KeeperEntry[]>([]);
+  const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ t: string; h?: string; err?: boolean } | null>(null);
-  const [buyAmt, setBuyAmt] = useState("100000");
-  const ids = STRATS.map((x) => sidNum(x.id));
-  const refresh = async (u = user) => { if (V.enabled) try { setCh(await V.readVault(u, ids)); } catch {} };
+  const [detail, setDetail] = useState<string | null>(null);
+  const refresh = async (u = user) => { try { setVs(await S.readAll(u)); setErr(null); } catch (e) { setErr("読み込みに失敗しました: " + (e as Error).message.split("\n")[0]); } };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { refresh(); const t = setInterval(() => refresh(), 8000); return () => clearInterval(t); }, [user]);
+  useEffect(() => { refresh(); const t = setInterval(() => refresh(), 10000); return () => clearInterval(t); }, [user]);
+  useEffect(() => { S.readKeeperLog().then(setLog); const t = setInterval(() => S.readKeeperLog().then(setLog), 60000); return () => clearInterval(t); }, []);
   const run = async (label: string, f: () => Promise<string>) => {
     setBusy(label); setNote(null);
-    try { const h = await f(); setNote({ t: `${label}: confirmed`, h }); await refresh(); }
+    try { const h = await f(); setNote({ t: `${label}: 完了`, h }); await refresh(); }
     catch (e) { setNote({ t: (e as Error).message.split("\n")[0], err: true }); }
     setBusy(null);
   };
-  const doConnect = async () => { try { const a = await V.connect(); setUser(a); refresh(a); } catch (e) { setNote({ t: (e as Error).message, err: true }); } };
-  const [detail, setDetail] = useState<Strat | null>(null);
-  const [tick, setTick] = useState(0);
-  useEffect(() => { const t = setInterval(() => setTick((x) => x + 1), 2500); return () => clearInterval(t); }, []);
-  const feed = useMemo(() => Array.from({ length: 5 }, (_, i) => { const k = tick + i; const s = STRATS[k % STRATS.length]; return { s, txt: FEED[(k * 7) % FEED.length], ago: i * 3 + 1 }; }), [tick]);
-  const board = [...STRATS].sort((a, b) => b.net - a.net);
-  const chosen = STRATS.find((s) => s.id === sid)!;
-  const pos = STRATS.map((x, i) => ({ s: x, amt: ch?.per[i] ?? 0n })).filter((p) => p.amt > 0n);
-  const pnl = (amt: bigint, x: Strat) => Number(formatEther(amt)) * (x.net / 100) * 0.35; // DEMO P&L, not on-chain
-  const n = Number(amt) || 0;
-  let wei = 0n; try { wei = parseEther(amt || "0"); } catch {}
-  const needApprove = !!ch && ch.allow < wei;
+  const doConnect = async () => { try { const a = await S.connect(); setUser(a); refresh(a); } catch (e) { setNote({ t: (e as Error).message, err: true }); } };
 
+  const rows = useMemo(() => (vs || []).map((v) => ({ v, m: NAMES[v.id], s: stats(v) })), [vs]);
+  const board = [...rows].sort((a, b) => b.s.ret - a.s.ret);
+  const chosen = rows.find((r) => r.v.id === sid);
+  const pos = rows.filter((r) => r.v.mine > 0n);
+  const tvl = rows.reduce((s, r) => s + r.v.nav, 0n);
+  let wei = 0n; try { wei = parseEther(amt || "0"); } catch {}
+  const feed = useMemo(() => {
+    const real = log.filter((e) => e.tx && !e.checkpoint).slice(-8).reverse();
+    if (real.length) return real.map((e) => ({ k: e.tx!, name: NAMES[e.vault]?.name || e.vault, txt: `${e.decision === "buy" ? "bought" : "sold"} ${e.amount} PATRON @ ${f4(e.price)} SEI`, why: e.why, ago: ago(Date.parse(e.t) / 1000), tx: e.tx }));
+    return rows.flatMap((r) => r.v.recs.map((x) => ({ r, x }))).filter(({ x }) => x.kind === 1 || x.kind === 2).sort((a, b) => b.x.time - a.x.time).slice(0, 8)
+      .map(({ r, x }) => ({ k: r.v.id + x.time, name: r.m.name, txt: `${KIND[x.kind].toLowerCase()} ${x.amount} PATRON for ${f4(Number(x.seiGwei) / 1e9)} SEI`, why: "", ago: ago(x.time), tx: undefined as string | undefined }));
+  }, [log, rows]);
+  const lastRun = log.length ? log[log.length - 1].t : null;
+  const d = detail ? rows.find((r) => r.v.id === detail) : null;
+
+  if (!NET.vaults.length) return <section id="vault" className="pv"><div className="pv-disc">Vault is not deployed on this network yet.</div></section>;
   return (
     <section id="vault" className="pv">
-      <div className="pv-disc">{V.isTestnet ? "SEI TESTNET" : "SEI MAINNET"} · Prototype. Not financial advice. Regulatory review required before launch. Deposits are real on-chain custody in PatronVault ({V.isTestnet ? "testnet PAT, no value" : "not audited"}); strategies, P&L and the activity feed are DEMO, the strategy choice only tags your deposit.</div>
+      <div className="pv-disc">{LABEL} · {isTestnet ? "試し用のネットワークで、お金の価値はありません。" : ""} 自動売買は本当にブロックチェーン上で動いています（Sei {isTestnet ? "testnet" : "mainnet"}）。数字はすべて契約から読み取った実際の値です。投資の助言ではありません。本番の前に法律の確認が必要です。</div>
+      {err && <div className="pd-err">{err}</div>}
 
       <div className="pv-grid2">
         <div className="pv-card">
-          <div className="pv-h"><h3>Deposit PATRON</h3><span className="pd-demo live">{V.isTestnet ? "TESTNET" : "MAINNET"}</span></div>
+          <div className="pv-h"><h3>SEIを預ける</h3><span className="pd-demo live">{NET.label}</span></div>
           <label className="pv-lab">Amount</label>
-          <div className="pv-inp"><input inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span>PAT</span></div>
-          <div className="pv-quick">{[1000, 10000, 50000].map((v) => <button key={v} onClick={() => setAmt(String(v))}>{v.toLocaleString()}</button>)}<span>{user ? <>Wallet {ch ? fmtPat(ch.wallet) : "…"} PAT · <a onClick={() => ch && setAmt(formatEther(ch.wallet))}>max</a></> : "Connect to see balance"}</span></div>
+          <div className="pv-inp"><input inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span>SEI</span></div>
+          <div className="pv-quick">{["0.02", "0.05", "0.1"].map((v) => <button key={v} onClick={() => setAmt(v)}>{v}</button>)}<span>{NET.faucet && <a href={NET.faucet} target="_blank" rel="noreferrer">テスト用SEIをもらう ↗</a>}</span></div>
           <label className="pv-lab">Strategy</label>
           <div className="pv-pick">
-            {STRATS.filter((s) => s.stage !== "parked").map((s) => (
-              <button key={s.id} className={sid === s.id ? "on" : ""} onClick={() => setSid(s.id)}><Dot st={s.stage} /><b>{s.name}</b><em className={s.net >= 0 ? "up" : "dn"}>{pct(s.net)}</em></button>
+            {rows.map(({ v, m, s }) => (
+              <button key={v.id} className={sid === v.id ? "on" : ""} onClick={() => setSid(v.id)}><Dot on={!v.paused} /><b>{m.name}</b><em className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</em></button>
             ))}
+            {!vs && <p className="pv-mut">読み込み中…</p>}
           </div>
           {!user ? <button className="pd-buy" onClick={doConnect}>Connect wallet</button>
-            : <button className="pd-buy" disabled={n <= 0 || !!busy || (ch ? ch.wallet < wei : true)} onClick={() => setConfirm(true)}>{ch && ch.wallet < wei ? "Not enough PAT" : "Review deposit"}</button>}
-          {V.isTestnet && <div className="pv-get"><b>Need testnet PAT?</b> Buy on the PATRON curve (Sei testnet SEI, no value). <a href="https://docs.sei.io/learn/faucet" target="_blank" rel="noreferrer">SEI faucet ↗</a>
-            <div className="pv-quick"><div className="pv-inp sm"><input inputMode="decimal" value={buyAmt} onChange={(e) => setBuyAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span>PAT</span></div>
-              <button className="pd-sec sm" disabled={!!busy} onClick={() => user ? run("Buy PAT", () => V.buyPat(parseEther(buyAmt || "0"))) : doConnect()}>{busy === "Buy PAT" ? "Confirm in wallet…" : "Buy PAT"}</button></div></div>}
-          {note && <div className={note.err ? "pd-err" : "pv-ok"}>{note.t}{note.h && <> · <a href={V.tx(note.h)} target="_blank" rel="noreferrer">view tx ↗</a></>}</div>}
+            : <button className="pd-buy" disabled={wei < 1000000000000000n || !!busy} onClick={() => setConfirm(true)}>{wei < 1000000000000000n ? "0.001 SEI以上" : "内容を確認"}</button>}
+          {note && <div className={note.err ? "pd-err" : "pv-ok"}>{note.t}{note.h && <> · <a href={explorerTx(note.h)} target="_blank" rel="noreferrer">記録を見る ↗</a></>}</div>}
         </div>
 
         <div className="pv-card">
-          <div className="pv-h"><h3>Your deposits</h3><span className="pv-mut">on-chain · TVL {ch ? fmtPat(ch.tvl) : "…"} PAT</span></div>
-          {user && ch && <div className="pv-row"><span>Your total in vault</span><b>{fmtPat(ch.mine)} PAT</b></div>}
-          {pos.length === 0 && <p className="pv-mut">{user ? "No deposits yet." : "Connect your wallet to see deposits."}</p>}
-          {pos.map((p) => { const s = p.s; const v = pnl(p.amt, s); return (
-            <div key={s.id} className="pv-pos">
-              <div><b>{s.name}</b><small><Dot st={s.stage} />{STAGE[s.stage][0]} · {s.market}</small></div>
-              <div className="r"><b>{fmtPat(p.amt)} PAT</b><small className={v >= 0 ? "up" : "dn"}>{v >= 0 ? "+" : ""}{v.toFixed(0)} PAT · DEMO P&L</small></div>
-              <button className="pv-wd" disabled={!!busy} onClick={() => run("Withdraw", () => V.withdraw(p.amt, sidNum(s.id)))}>{busy === "Withdraw" ? "…" : "Withdraw all"}</button>
-            </div>); })}
-          <div className="pv-h" style={{ marginTop: 14 }}><h3>Live activity</h3><span className="pv-live"><Dot st="live" />demo feed</span></div>
-          <ul className="pv-feed">{feed.map((f, i) => <li key={`${tick}-${i}`}><Dot st={f.s.stage} /><b>{f.s.name}</b> {f.txt}<span>{f.ago}m</span></li>)}</ul>
+          <div className="pv-h"><h3>あなたの預け入れ</h3><span className="pv-mut">on-chain · TVL {sei(tvl)} SEI</span></div>
+          {pos.length === 0 && <p className="pv-mut">{user ? "まだ預けていません。" : "ウォレットをつなぐと表示されます。"}</p>}
+          {pos.map(({ v, m }) => (
+            <div key={v.id} className="pv-pos">
+              <div><b>{m.name}</b><small><Dot on={!v.paused} />{v.tok} PATRON + {sei(v.sei)} SEI in vault</small></div>
+              <div className="r"><b>{sei(v.mineValue)} SEI</b><small>今の価値（売却した場合）</small></div>
+              <button className="pv-wd" disabled={!!busy} onClick={() => run("引き出し", () => S.withdraw(v.address, v.mine))}>{busy === "引き出し" ? "…" : "全部引き出す"}</button>
+            </div>))}
+          <div className="pv-h" style={{ marginTop: 14 }}><h3>Live activity</h3><span className="pv-live"><Dot on />{lastRun ? `keeper ${ago(Date.parse(lastRun) / 1000)} ago` : "on-chain"}</span></div>
+          <ul className="pv-feed">{feed.map((f) => <li key={f.k} title={f.why}><b>{f.name}</b> {f.txt}{f.tx && <> · <a href={explorerTx(f.tx)} target="_blank" rel="noreferrer">tx ↗</a></>}<span>{f.ago}</span></li>)}
+            {!feed.length && <li>まだ取引はありません。</li>}</ul>
         </div>
       </div>
 
       <div className="pv-h" style={{ marginTop: 26 }}><h2 className="pv-h2">Auto strategies</h2></div>
-      <div className="pv-legend">{(Object.keys(STAGE) as Stage[]).map((k) => <span key={k}><Dot st={k} />{STAGE[k][0]}</span>)}</div>
+      <div className="pv-legend"><span><Dot on />稼働中（keeperが定期的に売買）</span><span>1口の価値（NAV / share）の推移</span></div>
       <div className="pv-tiles">
-        {STRATS.map((s) => (
-          <button key={s.id} className="pv-tile" onClick={() => setDetail(s)}>
-            <div className="pv-h"><b>{s.name}</b><span className="pv-st"><Dot st={s.stage} />{STAGE[s.stage][0]}</span></div>
-            <small className="pv-mut">{s.agent} · {s.market}</small>
-            <div className={"pv-net " + (s.net >= 0 ? "up" : "dn")}>{pct(s.net)}<small>NET</small></div>
-            <Spark s={s} />
-            <div className="pv-kpi"><span>PF<b>{s.pf.toFixed(2)}</b></span><span>Max DD<b>{s.dd.toFixed(1)}%</b></span><span>Trades<b>{s.trades}</b></span></div>
+        {rows.map(({ v, m, s }) => (
+          <button key={v.id} className="pv-tile" onClick={() => setDetail(v.id)}>
+            <div className="pv-h"><b>{m.name}</b><span className="pv-st"><Dot on={!v.paused} />{v.paused ? "Paused" : "Live"}</span></div>
+            <small className="pv-mut">{m.agent} · PATRON/SEI</small>
+            <div className={"pv-net " + (s.ret >= 0 ? "up" : "dn")}>{pct(s.ret)}<small>NAV/SHARE</small></div>
+            <Spark d={s.series} />
+            <div className="pv-kpi"><span>NAV<b>{sei(v.nav)}</b></span><span>Max DD<b>{s.dd.toFixed(2)}%</b></span><span>Trades<b>{s.trades}</b></span></div>
           </button>
         ))}
       </div>
 
       <div className="pv-card" style={{ marginTop: 20 }}>
-        <div className="pv-h"><h3>Leaderboard</h3><span className="pv-mut">by NET %, demo</span></div>
-        <table className="pv-board"><thead><tr><th>#</th><th>Strategy</th><th>Stage</th><th>NET</th><th>PF</th><th>DD</th></tr></thead><tbody>
-          {board.map((s, i) => <tr key={s.id} onClick={() => setDetail(s)}><td>{i + 1}</td><td><b>{s.name}</b></td><td><Dot st={s.stage} /></td><td className={s.net >= 0 ? "up" : "dn"}>{pct(s.net)}</td><td>{s.pf.toFixed(2)}</td><td>{s.dd.toFixed(1)}%</td></tr>)}
+        <div className="pv-h"><h3>Leaderboard</h3><span className="pv-mut">1口の価値の伸び順 · on-chain</span></div>
+        <table className="pv-board"><thead><tr><th>#</th><th>Strategy</th><th>NAV (SEI)</th><th>Return</th><th>DD</th><th>Trades</th></tr></thead><tbody>
+          {board.map(({ v, m, s }, i) => <tr key={v.id} onClick={() => setDetail(v.id)}><td>{i + 1}</td><td><b>{m.name}</b></td><td>{sei(v.nav)}</td><td className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</td><td>{s.dd.toFixed(2)}%</td><td>{s.trades}</td></tr>)}
         </tbody></table>
       </div>
 
-      {confirm && (
+      {confirm && chosen && (
         <div className="pv-modal" onClick={() => setConfirm(false)}>
           <div className="pv-card pv-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="pv-h"><h3>Confirm deposit</h3><span className="pd-demo live">{V.isTestnet ? "TESTNET" : "MAINNET"}</span></div>
-            <div className="pv-big">{n.toLocaleString()} <small>PAT</small></div>
-            <div className="pv-row"><span>Strategy</span><b>{chosen.name}</b></div>
-            <div className="pv-row"><span>Stage</span><b><Dot st={chosen.stage} />{STAGE[chosen.stage][0]}</b></div>
-            <div className="pv-row"><span>Max drawdown (hist.)</span><b>{chosen.dd}%</b></div>
-            <p className="pv-warn">Prototype. Not financial advice. Regulatory review required before launch. Strategy is a tag only (DEMO), funds stay in the vault and only you can withdraw. {V.isTestnet ? "Sei testnet, no real value." : ""}</p>
+            <div className="pv-h"><h3>預け入れの確認</h3><span className="pd-demo live">{NET.label}</span></div>
+            <div className="pv-big">{amt} <small>SEI</small></div>
+            <div className="pv-row"><span>Strategy</span><b>{chosen.m.name}</b></div>
+            <div className="pv-row"><span>ルール</span><b style={{ textAlign: "right", maxWidth: 220 }}>{chosen.m.ja}</b></div>
+            <div className="pv-row"><span>Max drawdown</span><b>{chosen.s.dd.toFixed(2)}%</b></div>
+            <p className="pv-warn">{LABEL}。keeperはPATRONの売り買いしかできず、あなたのお金を引き出すことはできません。引き出しはいつでもあなただけができます。投資の助言ではありません。</p>
             <div className="pv-btns"><button className="pd-sec" onClick={() => setConfirm(false)}>Cancel</button>
-              <button className="pd-buy" disabled={!!busy} onClick={async () => { setConfirm(false); if (needApprove) await run("Approve PAT", () => V.approve(wei)); await run("Deposit", () => V.deposit(wei, sidNum(sid))); }}>{needApprove ? "Approve + deposit" : "Deposit"}</button></div>
+              <button className="pd-buy" disabled={!!busy} onClick={async () => { setConfirm(false); await run("預け入れ", () => S.deposit(chosen.v.address, wei)); }}>預ける</button></div>
           </div>
         </div>
       )}
-      {detail && (
+      {d && (
         <div className="pv-modal" onClick={() => setDetail(null)}>
           <div className="pv-card pv-sheet wide" onClick={(e) => e.stopPropagation()}>
-            <div className="pv-h"><h3>{detail.name}</h3><button className="pv-x" onClick={() => setDetail(null)}>×</button></div>
-            <small className="pv-mut"><Dot st={detail.stage} />{STAGE[detail.stage][0]} · {detail.agent} · {detail.market}</small>
-            <div className={"pv-net big " + (detail.net >= 0 ? "up" : "dn")}>{pct(detail.net)}<small>NET</small></div>
-            <div className="pv-curve"><Spark s={detail} w={400} h={140} big /></div>
-            <div className="pv-kpi"><span>Profit factor<b>{detail.pf.toFixed(2)}</b></span><span>Max DD<b>{detail.dd}%</b></span><span>Trades<b>{detail.trades}</b></span></div>
-            <h4 className="pv-lab">History (demo)</h4>
-            <table className="pv-board"><tbody>{Array.from({ length: 6 }, (_, i) => { const r = ((detail.seed * (i + 3) * 37) % 41) / 10 - 1.4; return <tr key={i}><td>Oct {12 - i}</td><td>{i % 2 ? "Short" : "Long"}</td><td>{detail.market}</td><td className={r >= 0 ? "up" : "dn"}>{r >= 0 ? "+" : ""}{r.toFixed(1)}%</td></tr>; })}</tbody></table>
-            <button className="pd-buy" onClick={() => { setSid(detail.id); setDetail(null); document.getElementById("vault")?.scrollIntoView({ behavior: "smooth" }); }} disabled={detail.stage === "parked"}>{detail.stage === "parked" ? "Parked, not accepting deposits" : "Deposit into this strategy"}</button>
+            <div className="pv-h"><h3>{d.m.name}</h3><button className="pv-x" onClick={() => setDetail(null)}>×</button></div>
+            <small className="pv-mut"><Dot on={!d.v.paused} />{d.m.agent} · {d.m.rule}</small>
+            <div className={"pv-net big " + (d.s.ret >= 0 ? "up" : "dn")}>{pct(d.s.ret)}<small>NAV/SHARE</small></div>
+            <div className="pv-curve"><Spark d={d.s.series} w={400} h={140} big /></div>
+            <div className="pv-kpi"><span>NAV<b>{sei(d.v.nav)} SEI</b></span><span>Holdings<b>{d.v.tok} PATRON + {sei(d.v.sei)} SEI</b></span><span>Trades<b>{d.s.trades}</b></span></div>
+            <h4 className="pv-lab">History (on-chain)</h4>
+            <table className="pv-board"><tbody>{[...d.v.recs].reverse().slice(0, 12).map((r, i) => <tr key={i}><td>{new Date(r.time * 1000).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[r.kind]}</td><td>{r.kind === 1 || r.kind === 2 ? `${r.amount} PATRON` : ""}</td><td>{r.seiGwei ? f4(Number(r.seiGwei) / 1e9) + " SEI" : ""}</td><td>NAV {f4(Number(r.navGwei) / 1e9)}</td></tr>)}</tbody></table>
+            <small className="pv-mut">Vault <a href={explorerAddr(d.v.address)} target="_blank" rel="noreferrer">{d.v.address.slice(0, 10)}… ↗</a> · keeper <a href={explorerAddr(d.v.keeper)} target="_blank" rel="noreferrer">{d.v.keeper.slice(0, 10)}… ↗</a></small>
+            <button className="pd-buy" onClick={() => { setSid(d.v.id); setDetail(null); document.getElementById("vault")?.scrollIntoView({ behavior: "smooth" }); }} disabled={d.v.paused}>{d.v.paused ? "停止中" : "この戦略に預ける"}</button>
           </div>
         </div>
       )}
@@ -158,15 +168,16 @@ export default function VaultPage({ home = "", drop = "../" }: { home?: string; 
     <div className="pd">
       <header className="pd-top">
         <a className="pd-brand" href={drop}><Mustache size={22} /><span>patron<i>_</i></span></a>
-        <div className="pd-actions"><span className="pd-demo live">{V.isTestnet ? "TESTNET" : "MAINNET"}</span><a className="pd-wallet" href={drop}>PATRON Edition 0</a></div>
+        <div className="pd-actions"><span className="pd-demo live">{NET.label}</span><a className="pd-wallet" href={drop}>PATRON Edition 0</a></div>
       </header>
       <main className="pv-main">
+        {isTestnet && <div className="pd-tn" role="note"><b>テストネット</b> 試し用のネットワークです。お金の価値はありません。</div>}
         <section className="pd-card pv-hero">
-          <div className="pd-card-h"><h1>PATRON Vault</h1><p>Deposit $PATRON into auto strategies</p></div>
-          <span className="pd-chip">{V.isTestnet ? "TESTNET" : "MAINNET"}</span>
+          <div className="pd-card-h"><h1>PATRON Vault</h1><p>SEIを預けて、戦略を選ぶと自動で売買します</p></div>
+          <span className="pd-chip">{NET.label}</span>
         </section>
         <Vault />
-        <p className="pd-foot">PatronVault <a href={V.addr(V.VAULT)} target="_blank" rel="noreferrer">{V.VAULT.slice(0, 10)}… ↗</a> · token <a href={V.addr(V.TOKEN)} target="_blank" rel="noreferrer">{V.TOKEN.slice(0, 10)}… ↗</a></p>
+        <p className="pd-foot">PatronStrategyVault × {NET.vaults.length} · market <a href={explorerAddr(NET.market)} target="_blank" rel="noreferrer">{NET.market.slice(0, 10)}… ↗</a> · token <a href={explorerAddr(NET.token)} target="_blank" rel="noreferrer">{NET.token.slice(0, 10)}… ↗</a></p>
         {home && <p className="pd-foot"><a href={home} target="_blank" rel="noreferrer">patron.red →</a></p>}
       </main>
     </div>

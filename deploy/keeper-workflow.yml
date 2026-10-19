@@ -1,0 +1,36 @@
+name: PATRON vault keeper (Sei testnet)
+on:
+  schedule:
+    - cron: "17 */3 * * *" # every 3 hours (testnet gas is limited)
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+jobs:
+  keeper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: data, path: _data }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-audit --no-fund
+        working-directory: keeper
+      - name: Run keeper
+        working-directory: keeper
+        env:
+          KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+          FILLS_IN: ../_data/market-fills.json
+          LOG_OUT: ../_data/keeper-log.json
+        run: node keeper.mjs
+      - name: Publish data
+        working-directory: _data
+        run: |
+          git config user.name "patron-keeper"
+          git config user.email "patron-keeper@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || (git commit -m "keeper run $(date -u +%FT%TZ)" && git push)

@@ -1,19 +1,19 @@
 "use client";
 import { createPublicClient, createWalletClient, custom, http, parseAbi, type EIP1193Provider, type Address } from "viem";
-import { seiTestnet } from "viem/chains";
+import { defineChain } from "viem";
+import { NET, explorerTx, explorerAddr, seiscanTx } from "./network";
+export { NET, explorerTx, explorerAddr, seiscanTx };
 
-/** PATRON drop on Sei EVM TESTNET (atlantic-2, chain 1328). No mainnet. */
-export const PATRON_CHAIN = {
-  ...seiTestnet,
-  id: 1328,
-  rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_PATRON_RPC_URL || "https://evm-rpc-testnet.sei-apis.com"] } },
-} as const;
-export const EXPLORER = "https://seitrace.com";
-export const explorerTx = (h: string) => `${EXPLORER}/tx/${h}?chain=atlantic-2`;
-export const explorerAddr = (a: string) => `${EXPLORER}/address/${a}?chain=atlantic-2`;
+/** PATRON drop chain, chosen by NEXT_PUBLIC_PATRON_NETWORK (see lib/network.ts). Default: Sei TESTNET 1328. */
+export const PATRON_CHAIN = defineChain({
+  id: NET.chainId, name: NET.chainName,
+  nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 },
+  rpcUrls: { default: { http: [NET.rpc] } },
+  blockExplorers: { default: { name: "Seitrace", url: NET.explorer } },
+});
 
-export const MARKET = (process.env.NEXT_PUBLIC_PATRON_MARKET || "0xB4Bf3BbA6BD96D8C1736940c75d85E4EA4b02039") as Address | "";
-export const TOKEN = (process.env.NEXT_PUBLIC_PATRON_TOKEN || "0x322d1A62ca7505827baedC726949168Ff06b106f") as Address | "";
+export const MARKET = NET.market as Address | "";
+export const TOKEN = NET.token as Address | "";
 export const chainEnabled = Boolean(MARKET && TOKEN);
 
 export const marketAbi = parseAbi([
@@ -50,11 +50,11 @@ const eth = () => (typeof window !== "undefined" ? (window as unknown as { ether
 export const hasWallet = () => Boolean(eth());
 
 export async function addSeiTestnet() {
-  const e = eth(); if (!e) throw new Error("No wallet found");
+  const e = eth(); if (!e) throw new Error("ウォレットが見つかりません（MetaMaskなどを入れてください）");
   const hex = "0x" + PATRON_CHAIN.id.toString(16);
   try { await e.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] }); }
   catch {
-    await e.request({ method: "wallet_addEthereumChain", params: [{ chainId: hex, chainName: "Sei Testnet (atlantic-2)", nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: ["https://evm-rpc-testnet.sei-apis.com"], blockExplorerUrls: ["https://seitrace.com/?chain=atlantic-2"] }] });
+    await e.request({ method: "wallet_addEthereumChain", params: [{ chainId: hex, chainName: NET.chainName, nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: [NET.rpc], blockExplorerUrls: [`${NET.explorer}/?chain=${NET.explorerChain}`] }] });
   }
 }
 
@@ -82,7 +82,7 @@ export async function sell(n: number) {
   const [g, f] = await quoteSell(n); const min = ((g - f) * (10_000n - SLIP)) / 10_000n;
   const w = await wallet(); const me = w.account!.address;
   const al = await pub.readContract({ address: TOKEN as Address, abi: tokenAbi, functionName: "allowance", args: [me, MARKET as Address] });
-  if (al < BigInt(n)) await send((w) => w.writeContract({ address: TOKEN as Address, abi: tokenAbi, functionName: "approve", args: [MARKET as Address, BigInt(n)], account: w.account!, chain: PATRON_CHAIN }));
+  if (al < BigInt(n)) await send((w) => w.writeContract({ address: TOKEN as Address, abi: tokenAbi, functionName: "approve", args: [MARKET as Address, 2n ** 256n - 1n], account: w.account!, chain: PATRON_CHAIN }));
   return send((w) => w.writeContract({ address: MARKET as Address, abi: marketAbi, functionName: "sell", args: [BigInt(n), min], account: w.account!, chain: PATRON_CHAIN }));
 }
 export const redeem = (n: number) => send((w) => w.writeContract({ address: TOKEN as Address, abi: tokenAbi, functionName: "redeem", args: [BigInt(n)], account: w.account!, chain: PATRON_CHAIN }));

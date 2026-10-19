@@ -4,3 +4,5 @@ out/
 .env*
 !.env.example
 *.zip
+node_modules
+*.tsbuildinfo

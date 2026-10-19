@@ -4,15 +4,17 @@ import * as chain from "@/lib/patronChain";
 import { formatEther } from "viem";
 import Mustache from "./Mustache";
 import CardBuy from "./CardBuy";
+import EasyLogin from "./EasyLogin";
 import { Countdown, LiquidityGauge } from "./DropMeters";
-import { loadFills, type Fill } from "@/lib/launchHistory";
+import { loadMarketFills, type Fill } from "@/lib/launchHistory";
+import { NET, isTestnet } from "@/lib/network";
 
 /* Unisocks-style constant-product curve (x*y=k), priced client-side in USD. DEMO ONLY. */
 const SUPPLY = 500;
 const EXT = process.env.NEXT_PUBLIC_HOME_URL || "https://patron.red";
 const connectWallet = chain.connect;
 const LIVE = chain.chainEnabled; // contracts configured -> real Sei TESTNET txs
-const TAG = LIVE ? "TESTNET" : "DEMO";
+const TAG = LIVE ? NET.label : "DEMO";
 // Same x*y=k math as PatronMarket.sol. Demo: USD, start $25. Testnet: SEI, start = virtualSei/500 (read from chain).
 const curve = { start: 25, unit: LIVE ? "SEI" : "USD" };
 let START_PRICE = curve.start;
@@ -23,7 +25,7 @@ const buyCost = (r: number, n: number) => (n <= 0 || n >= r ? Infinity : (reserv
 const sellGain = (r: number, n: number) => (n <= 0 ? 0 : (reserveOf(r) - reserveOf(r + n)) * (1 - FEE));
 const fmt = (n: number) => (!isFinite(n) ? "—" : LIVE ? n.toLocaleString("en-US", { maximumFractionDigits: 4 }) + " SEI" : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-type Mode = null | "card" | "buy" | "sell" | "redeem" | "stats";
+type Mode = null | "easy" | "card" | "buy" | "sell" | "redeem" | "stats";
 interface St { pool: number; held: number; redeemed: number }
 const KEY = "patron-drop-demo";
 
@@ -61,17 +63,17 @@ export default function PatronDrop() {
   const flash = (m: string, link?: string) => { setToast(m); setTxLink(link || null); setTimeout(() => setToast(null), 6000); };
   const [txLink, setTxLink] = useState<string | null>(null);
   const runBuy = async (n: number, v: number, pay?: string) => {
-    if (LIVE) { const h = pay === "USDC" || pay === "mUSDC" ? await chain.buyUsdc(pay, n) : await chain.buy(n); if (!addr) setAddr(await connectWallet()); await refresh(); setMode(null); flash(`TESTNET: bought ${n} $PATRON`, chain.explorerTx(h)); return; }
+    if (LIVE) { const h = pay === "USDC" || pay === "mUSDC" ? await chain.buyUsdc(pay, n) : await chain.buy(n); if (!addr) setAddr(await connectWallet()); await refresh(); setMode(null); flash(`${TAG}: bought ${n} $PATRON`, chain.explorerTx(h)); return; }
     await new Promise((r) => setTimeout(r, 900));
     save({ ...st, pool: st.pool - n, held: st.held + n }); setMode(null); flash(`DEMO: bought ${n} $PATRON for ${fmt(v)}`);
   };
   const runSell = async (n: number, v: number) => {
-    if (LIVE) { const h = await chain.sell(n); await refresh(); setMode(null); flash(`TESTNET: sold ${n} $PATRON`, chain.explorerTx(h)); return; }
+    if (LIVE) { const h = await chain.sell(n); await refresh(); setMode(null); flash(`${TAG}: sold ${n} $PATRON`, chain.explorerTx(h)); return; }
     await new Promise((r) => setTimeout(r, 900));
     save({ ...st, pool: st.pool + n, held: st.held - n }); setMode(null); flash(`DEMO: sold ${n} $PATRON for ${fmt(v)}`);
   };
   const runRedeem = async (n: number) => {
-    if (LIVE) { const h = await chain.redeem(n); await refresh(); flash(`TESTNET: redeemed ${n} $PATRON`, chain.explorerTx(h)); return; }
+    if (LIVE) { const h = await chain.redeem(n); await refresh(); flash(`${TAG}: redeemed ${n} $PATRON`, chain.explorerTx(h)); return; }
     save({ ...st, held: st.held - n, redeemed: st.redeemed + n });
   };
 
@@ -87,6 +89,7 @@ export default function PatronDrop() {
       </header>}
 
       <main className="pd-main">
+        {LIVE && isTestnet && <div className="pd-tn" role="note"><b>テストネット</b> 試し用のネットワークです。お金の価値はありません。</div>}
         <section className="pd-card">
           <div className="pd-card-h"><h1>PATRON Edition 0</h1><p>$PATRON</p></div>
           <Art />
@@ -99,10 +102,11 @@ export default function PatronDrop() {
         <LiquidityGauge />
         <div className="pd-info">Buy and sell a limited mustache token. Redeem it for a PATRON reward. <a onClick={() => setMode("stats")}>Learn more</a>
           {addr && <div className="pd-bal">You hold <b>{st.held}</b> $PATRON</div>}
-          {LIVE && <div className="pd-net">Sei EVM Testnet (atlantic-2 · 1328) · <a href={chain.explorerAddr(chain.MARKET)} target="_blank" rel="noreferrer">contract</a> · <a onClick={() => chain.addSeiTestnet().catch((e) => flash((e as Error).message))}>Add Sei testnet</a> · <a href="https://docs.sei.io/learn/faucet" target="_blank" rel="noreferrer">faucet</a></div>}
+          {LIVE && <div className="pd-net">{NET.chainName} · {NET.chainId} · <a href={chain.explorerAddr(chain.MARKET)} target="_blank" rel="noreferrer">contract</a> · <a onClick={() => chain.addSeiTestnet().catch((e) => flash((e as Error).message))}>Add {isTestnet ? "Sei testnet" : "Sei"}</a>{NET.faucet && <> · <a href={NET.faucet} target="_blank" rel="noreferrer">faucet</a></>}</div>}
           {chainErr && <div className="pd-err">{chainErr}</div>}
         </div>
         <button className="pd-buy" onClick={() => setMode("buy")}>Buy</button>
+        {LIVE && isTestnet && <button className="pd-sec cb-open" style={{ fontSize: 20 }} onClick={() => setMode("easy")}>かんたんログインで買う（ウォレット不要）<br /><small>テストネット専用・実際のお金は使えません</small></button>}
         {LIVE && <button className="pd-sec cb-open" onClick={() => setMode("card")}>カード / Apple PayでPATRONを買う</button>}
         <div className="pd-row">
           <button className="pd-sec" disabled={!addr || st.held < 1} onClick={() => setMode("sell")}>Sell</button>
@@ -110,13 +114,14 @@ export default function PatronDrop() {
         </div>
         <PriceSection st={st} />
         <StakeSection held={st.held} />
-        {!embed && <a className="pd-sec pd-link" href="vault/">PATRON Vault: auto strategies (DEMO) →</a>}
+        {!embed && <a className="pd-sec pd-link" href="vault/">PATRON Vault: 自動売買（{isTestnet ? "テストネット" : "本番"}） →</a>}
         {!embed && EXT && <p className="pd-foot"><a href={EXT} target="_blank" rel="noreferrer">patron.red →</a></p>}
-        <p className="pd-foot">{LIVE ? "TESTNET: transactions use Sei testnet SEI (no real value). Shipping details are never put on-chain." : "Demo mode: no real payments, tokens or shipping. State is stored only in this browser."}</p>
+        <p className="pd-foot">{LIVE ? (isTestnet ? "テストネット: Sei testnetのSEIを使います（お金の価値はありません）。配送先はブロックチェーンに載せません。" : "Shipping details are never put on-chain.") : "Demo mode: no real payments, tokens or shipping. State is stored only in this browser."}</p>
       </main>
 
       {mode && <div className="pd-ov" onClick={() => setMode(null)}>
         <div className="pd-modal" onClick={(e) => e.stopPropagation()}>
+          {mode === "easy" && <EasyLogin onAddr={(a) => { setAddr(a); refresh(a); }} onDone={() => refresh()} />}
           {mode === "card" && <CardBuy addr={addr} connect={connect} max={Math.max(1, st.pool - 1)} onDone={() => refresh()} />}
           {mode === "buy" && <Trade kind="buy" st={st} addr={addr} connect={connect} onDone={runBuy} />}
           {mode === "sell" && <Trade kind="sell" st={st} addr={addr} connect={connect} onDone={runSell} />}
@@ -157,7 +162,7 @@ function Trade({ kind, st, addr, connect, onDone }: { kind: "buy" | "sell"; st: 
     <div className="pd-mbody">
       <em>{kind === "buy" ? "How do you want to pay?" : "What do you want to receive?"}</em>
       <select className="pd-sel" value={pay} onChange={(e) => setPay(e.target.value)} disabled={LIVE && kind !== "buy"}>
-        {(LIVE ? (kind === "buy" ? ["SEI", "USDC", "mUSDC"] : ["SEI"]) : ["USDC", "SEI", "ETH"]).map((t) => <option key={t} value={t}>{LIVE ? (t === "SEI" ? "Testnet SEI" : chain.USDC_ROUTES[t as chain.UsdcKind].label) : t}</option>)}
+        {(LIVE ? (kind === "buy" && isTestnet ? ["SEI", "USDC", "mUSDC"] : ["SEI"]) : ["USDC", "SEI", "ETH"]).map((t) => <option key={t} value={t}>{LIVE ? (t === "SEI" ? "Testnet SEI" : chain.USDC_ROUTES[t as chain.UsdcKind].label) : t}</option>)}
       </select>
       <small className="pd-fine">Includes 0.3% curve fee · avg {fmt(v / n)} each</small>
       {!addr && !(LIVE && kind === "buy") ? <button className="pd-buy" onClick={connect}>Connect Wallet</button>
@@ -221,12 +226,10 @@ function Stats({ st }: { st: St }) {
   </div>;
 }
 
-const MARKET_FROM = BigInt(process.env.NEXT_PUBLIC_PATRON_MARKET_BLOCK || "276662707");
-
 function PriceSection({ st }: { st: St }) {
   const [fills, setFills] = useState<Fill[] | null>(null);
   const [view, setView] = useState<"history" | "curve">("history");
-  useEffect(() => { if (LIVE) loadFills(chain.MARKET, MARKET_FROM, 0).then(setFills).catch(() => setFills([])); else setFills([]); }, [st.pool]);
+  useEffect(() => { if (LIVE) loadMarketFills(chain.MARKET).then(setFills).catch(() => setFills([])); else setFills([]); }, [st.pool]);
   const now = buyCost(st.pool, 1);
   const hist = fills && fills.length ? [...fills.map((f) => f.price), now] : [];
   const useHist = view === "history" && hist.length >= 2;
@@ -247,7 +250,7 @@ function PriceSection({ st }: { st: St }) {
         <path d={d} fill="none" stroke="var(--pd-red)" strokeWidth="2" />
         <circle cx={X(mark)} cy={Y(useHist ? now : buyCost(st.pool, 1))} r="5" fill="var(--pd-red)" />
       </svg>
-      <small className="pd-fine">{useHist ? `${fills!.length} on-chain trade${fills!.length === 1 ? "" : "s"} (Bought/Sold events on Sei testnet)` : fills === null ? "Loading on-chain trades…" : view === "history" ? "No trades yet, showing the curve. Dot = now." : "Price vs. tokens sold (x·y=k). Dot = now."}</small>
+      <small className="pd-fine">{useHist ? `${fills!.length} on-chain trade${fills!.length === 1 ? "" : "s"} (Bought/Sold events on ${NET.chainName})` : fills === null ? "Loading on-chain trades…" : view === "history" ? "No trades yet, showing the curve. Dot = now." : "Price vs. tokens sold (x·y=k). Dot = now."}</small>
       {!!fills?.length && <div className="pd-fills">{fills.slice(-4).reverse().map((f) => (
         <a key={f.tx} href={chain.explorerTx(f.tx)} target="_blank" rel="noreferrer"><span className={f.side === "BUY" ? "b" : "s"}>{f.side === "BUY" ? "Buy" : "Sell"} {f.amount}</span><span>{fmt(f.price)} each ↗</span></a>))}</div>}
     </section>
