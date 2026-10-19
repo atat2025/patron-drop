@@ -3,12 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { formatEther, parseEther, type Address } from "viem";
 import * as S from "@/lib/strategyVaults";
 import { NET, isTestnet, explorerTx, explorerAddr } from "@/lib/network";
+import { useSeiUsd, usdSei } from "@/lib/seiUsd";
 
 /* PATRON Vault: real on-chain strategy vaults (PatronStrategyVault) on the PATRON Edition 0 curve.
    NAV, trades and charts are read from the contracts; the keeper log (reasons + tx links) comes from the keeper job. */
 const NAMES = S.META;
 const f4 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 });
-const sei = (v: bigint) => f4(Number(formatEther(v)));
+const sei = (v: bigint) => usdSei(Number(formatEther(v)));
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 const ago = (t: number) => { const s = Math.max(0, Math.floor(Date.now() / 1000 - t)); return s < 3600 ? `${Math.max(1, Math.floor(s / 60))}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`; };
 const KIND = ["checkpoint", "Buy", "Sell", "Deposit", "Withdraw"];
@@ -32,6 +33,7 @@ function Spark({ d, w = 120, h = 34, big = false }: { d: number[]; w?: number; h
 const Dot = ({ on }: { on: boolean }) => <i className="pv-dot" style={{ background: on ? "#1a8f4c" : "#bbb", boxShadow: "none" }} />;
 
 export function Vault() {
+  useSeiUsd();
   const [amt, setAmt] = useState("0.05");
   const [sid, setSid] = useState(NET.vaults[0]?.id || "");
   const [confirm, setConfirm] = useState(false);
@@ -62,9 +64,9 @@ export function Vault() {
   let wei = 0n; try { wei = parseEther(amt || "0"); } catch {}
   const feed = useMemo(() => {
     const real = log.filter((e) => e.tx && !e.checkpoint).slice(-8).reverse();
-    if (real.length) return real.map((e) => ({ k: e.tx!, name: NAMES[e.vault]?.name || e.vault, txt: `${e.decision === "buy" ? "bought" : "sold"} ${e.amount} PATRON @ ${f4(e.price)} SEI`, why: e.why, ago: ago(Date.parse(e.t) / 1000), tx: e.tx }));
+    if (real.length) return real.map((e) => ({ k: e.tx!, name: NAMES[e.vault]?.name || e.vault, txt: `${e.decision === "buy" ? "bought" : "sold"} ${e.amount} PATRON @ ${usdSei(e.price)}`, why: e.why, ago: ago(Date.parse(e.t) / 1000), tx: e.tx }));
     return rows.flatMap((r) => r.v.recs.map((x) => ({ r, x }))).filter(({ x }) => x.kind === 1 || x.kind === 2).sort((a, b) => b.x.time - a.x.time).slice(0, 8)
-      .map(({ r, x }) => ({ k: r.v.id + x.time, name: r.m.name, txt: `${KIND[x.kind].toLowerCase()} ${x.amount} PATRON for ${f4(Number(x.seiGwei) / 1e9)} SEI`, why: "", ago: ago(x.time), tx: undefined as string | undefined }));
+      .map(({ r, x }) => ({ k: r.v.id + x.time, name: r.m.name, txt: `${KIND[x.kind].toLowerCase()} ${x.amount} PATRON for ${usdSei(Number(x.seiGwei) / 1e9)}`, why: "", ago: ago(x.time), tx: undefined as string | undefined }));
   }, [log, rows]);
   const lastRun = log.length ? log[log.length - 1].t : null;
   const d = detail ? rows.find((r) => r.v.id === detail) : null;
@@ -94,12 +96,12 @@ export function Vault() {
         </div>
 
         <div className="pv-card">
-          <div className="pv-h"><h3>あなたの預け入れ</h3><span className="pv-mut">on-chain · TVL {sei(tvl)} SEI</span></div>
+          <div className="pv-h"><h3>あなたの預け入れ</h3><span className="pv-mut">on-chain · TVL {sei(tvl)}</span></div>
           {pos.length === 0 && <p className="pv-mut">{user ? "まだ預けていません。" : "ウォレットをつなぐと表示されます。"}</p>}
           {pos.map(({ v, m }) => (
             <div key={v.id} className="pv-pos">
-              <div><b>{m.name}</b><small><Dot on={!v.paused} />{v.tok} PATRON + {sei(v.sei)} SEI in vault</small></div>
-              <div className="r"><b>{sei(v.mineValue)} SEI</b><small>今の価値（売却した場合）</small></div>
+              <div><b>{m.name}</b><small><Dot on={!v.paused} />{v.tok} PATRON + {sei(v.sei)} in vault</small></div>
+              <div className="r"><b>{sei(v.mineValue)}</b><small>今の価値（売却した場合）</small></div>
               <button className="pv-wd" disabled={!!busy} onClick={() => run("引き出し", () => S.withdraw(v.address, v.mine))}>{busy === "引き出し" ? "…" : "全部引き出す"}</button>
             </div>))}
           <div className="pv-h" style={{ marginTop: 14 }}><h3>Live activity</h3><span className="pv-live"><Dot on />{lastRun ? `keeper ${ago(Date.parse(lastRun) / 1000)} ago` : "on-chain"}</span></div>
@@ -124,7 +126,7 @@ export function Vault() {
 
       <div className="pv-card" style={{ marginTop: 20 }}>
         <div className="pv-h"><h3>Leaderboard</h3><span className="pv-mut">1口の価値の伸び順 · on-chain</span></div>
-        <table className="pv-board"><thead><tr><th>#</th><th>Strategy</th><th>NAV (SEI)</th><th>Return</th><th>DD</th><th>Trades</th></tr></thead><tbody>
+        <table className="pv-board"><thead><tr><th>#</th><th>Strategy</th><th>NAV</th><th>Return</th><th>DD</th><th>Trades</th></tr></thead><tbody>
           {board.map(({ v, m, s }, i) => <tr key={v.id} onClick={() => setDetail(v.id)}><td>{i + 1}</td><td><b>{m.name}</b></td><td>{sei(v.nav)}</td><td className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</td><td>{s.dd.toFixed(2)}%</td><td>{s.trades}</td></tr>)}
         </tbody></table>
       </div>
@@ -133,7 +135,7 @@ export function Vault() {
         <div className="pv-modal" onClick={() => setConfirm(false)}>
           <div className="pv-card pv-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="pv-h"><h3>預け入れの確認</h3><span className="pd-demo live">{NET.label}</span></div>
-            <div className="pv-big">{amt} <small>SEI</small></div>
+            <div className="pv-big">{usdSei(Number(amt) || 0).split(" (")[0]} <small>({amt} SEI)</small></div>
             <div className="pv-row"><span>Strategy</span><b>{chosen.m.name}</b></div>
             <div className="pv-row"><span>ルール</span><b style={{ textAlign: "right", maxWidth: 220 }}>{chosen.m.ja}</b></div>
             <div className="pv-row"><span>Max drawdown</span><b>{chosen.s.dd.toFixed(2)}%</b></div>
@@ -150,9 +152,9 @@ export function Vault() {
             <small className="pv-mut"><Dot on={!d.v.paused} />{d.m.agent} · {d.m.rule}</small>
             <div className={"pv-net big " + (d.s.ret >= 0 ? "up" : "dn")}>{pct(d.s.ret)}<small>NAV/SHARE</small></div>
             <div className="pv-curve"><Spark d={d.s.series} w={400} h={140} big /></div>
-            <div className="pv-kpi"><span>NAV<b>{sei(d.v.nav)} SEI</b></span><span>Holdings<b>{d.v.tok} PATRON + {sei(d.v.sei)} SEI</b></span><span>Trades<b>{d.s.trades}</b></span></div>
+            <div className="pv-kpi"><span>NAV<b>{sei(d.v.nav)}</b></span><span>Holdings<b>{d.v.tok} PATRON + {sei(d.v.sei)}</b></span><span>Trades<b>{d.s.trades}</b></span></div>
             <h4 className="pv-lab">History (on-chain)</h4>
-            <table className="pv-board"><tbody>{[...d.v.recs].reverse().slice(0, 12).map((r, i) => <tr key={i}><td>{new Date(r.time * 1000).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[r.kind]}</td><td>{r.kind === 1 || r.kind === 2 ? `${r.amount} PATRON` : ""}</td><td>{r.seiGwei ? f4(Number(r.seiGwei) / 1e9) + " SEI" : ""}</td><td>NAV {f4(Number(r.navGwei) / 1e9)}</td></tr>)}</tbody></table>
+            <table className="pv-board"><tbody>{[...d.v.recs].reverse().slice(0, 12).map((r, i) => <tr key={i}><td>{new Date(r.time * 1000).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[r.kind]}</td><td>{r.kind === 1 || r.kind === 2 ? `${r.amount} PATRON` : ""}</td><td>{r.seiGwei ? usdSei(Number(r.seiGwei) / 1e9) : ""}</td><td>NAV {usdSei(Number(r.navGwei) / 1e9)}</td></tr>)}</tbody></table>
             <small className="pv-mut">Vault <a href={explorerAddr(d.v.address)} target="_blank" rel="noreferrer">{d.v.address.slice(0, 10)}… ↗</a> · keeper <a href={explorerAddr(d.v.keeper)} target="_blank" rel="noreferrer">{d.v.keeper.slice(0, 10)}… ↗</a></small>
             <button className="pd-buy" onClick={() => { setSid(d.v.id); setDetail(null); document.getElementById("vault")?.scrollIntoView({ behavior: "smooth" }); }} disabled={d.v.paused}>{d.v.paused ? "停止中" : "この戦略に預ける"}</button>
           </div>

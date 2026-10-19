@@ -220,3 +220,4 @@ a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-styl
 .pd-sec.cb-open { width:100%; height:48px; margin-top:-4px; }
 
 .pd-tn { background:#ffe8ee; color:#b00020; border-radius:8px; padding:10px 14px; font-size:14px; font-weight:600; text-align:center; } .pd-tn b { margin-right:6px; }
+.pd-sei { font-size: .55em; font-weight: 400; color: #888; }

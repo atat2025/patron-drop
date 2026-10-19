@@ -8,6 +8,7 @@ import EasyLogin from "./EasyLogin";
 import { Countdown, LiquidityGauge } from "./DropMeters";
 import { loadMarketFills, type Fill } from "@/lib/launchHistory";
 import { NET, isTestnet } from "@/lib/network";
+import { useSeiUsd, usdSei, fmtUsd, fmtSei, seiUsd } from "@/lib/seiUsd";
 
 /* Unisocks-style constant-product curve (x*y=k), priced client-side in USD. DEMO ONLY. */
 const SUPPLY = 500;
@@ -16,14 +17,22 @@ const connectWallet = chain.connect;
 const LIVE = chain.chainEnabled; // contracts configured -> real Sei TESTNET txs
 const TAG = LIVE ? NET.label : "DEMO";
 // Same x*y=k math as PatronMarket.sol. Demo: USD, start $25. Testnet: SEI, start = virtualSei/500 (read from chain).
-const curve = { start: 25, unit: LIVE ? "SEI" : "USD" };
+// LIVE: start = virtualSei/500 read from chain (25 SEI / 500 = 0.05). Never show the demo $25 curve as SEI.
+const curve = { start: LIVE ? 0.05 : 25, unit: LIVE ? "SEI" : "USD" };
+let LOADED = !LIVE;
 let START_PRICE = curve.start;
 const FEE = 0.003;
 const K = () => START_PRICE * SUPPLY * SUPPLY;
 const reserveOf = (r: number) => K() / r;
 const buyCost = (r: number, n: number) => (n <= 0 || n >= r ? Infinity : (reserveOf(r - n) - reserveOf(r)) * (1 + FEE));
 const sellGain = (r: number, n: number) => (n <= 0 ? 0 : (reserveOf(r) - reserveOf(r + n)) * (1 - FEE));
-const fmt = (n: number) => (!isFinite(n) ? "—" : LIVE ? n.toLocaleString("en-US", { maximumFractionDigits: 4 }) + " SEI" : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+const fmt = (n: number) => (!isFinite(n) ? "—" : LIVE ? (LOADED ? usdSei(n) : "…") : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+function Px({ v }: { v: number }) {
+  if (!LIVE) return <>{fmt(v)}</>;
+  if (!LOADED || !isFinite(v)) return <>…</>;
+  return <>{fmtUsd(v * seiUsd())}<small className="pd-sei"> ({fmtSei(v)})</small></>;
+}
 
 type Mode = null | "easy" | "card" | "buy" | "sell" | "redeem" | "stats";
 interface St { pool: number; held: number; redeemed: number }
@@ -32,6 +41,7 @@ const KEY = "patron-drop-demo";
 export default function PatronDrop() {
   const [embed, setEmbed] = useState(false);
   useEffect(() => { setEmbed(new URLSearchParams(location.search).get("embed") === "1"); }, []);
+  useSeiUsd();
   const [st, setSt] = useState<St>({ pool: 445, held: 0, redeemed: 37 });
   const [addr, setAddr] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>(null);
@@ -43,7 +53,7 @@ export default function PatronDrop() {
       const c = await chain.readState();
       START_PRICE = Number(formatEther(c.virtualSei)) / SUPPLY;
       const held = a && a.startsWith("0x") && a.length === 42 ? await chain.readBalance(a as `0x${string}`) : 0;
-      setSt({ pool: c.reserve, held, redeemed: c.redeemed }); setChainErr(null);
+      LOADED = true; setSt({ pool: c.reserve, held, redeemed: c.redeemed }); setChainErr(null);
     } catch (e) { setChainErr("Can't read the PATRON contract: " + (e as Error).message.split("\n")[0]); }
   };
   useEffect(() => {
@@ -63,12 +73,12 @@ export default function PatronDrop() {
   const flash = (m: string, link?: string) => { setToast(m); setTxLink(link || null); setTimeout(() => setToast(null), 6000); };
   const [txLink, setTxLink] = useState<string | null>(null);
   const runBuy = async (n: number, v: number, pay?: string) => {
-    if (LIVE) { const h = pay === "USDC" || pay === "mUSDC" ? await chain.buyUsdc(pay, n) : await chain.buy(n); if (!addr) setAddr(await connectWallet()); await refresh(); setMode(null); flash(`${TAG}: bought ${n} $PATRON`, chain.explorerTx(h)); return; }
+    if (LIVE) { const h = pay === "USDC" || pay === "mUSDC" ? await chain.buyUsdc(pay, n) : await chain.buy(n); if (!addr) setAddr(await connectWallet()); await refresh(); setMode(null); flash(`${TAG}: bought ${n} $PATRON for ${fmt(v)}`, chain.explorerTx(h)); return; }
     await new Promise((r) => setTimeout(r, 900));
     save({ ...st, pool: st.pool - n, held: st.held + n }); setMode(null); flash(`DEMO: bought ${n} $PATRON for ${fmt(v)}`);
   };
   const runSell = async (n: number, v: number) => {
-    if (LIVE) { const h = await chain.sell(n); await refresh(); setMode(null); flash(`${TAG}: sold ${n} $PATRON`, chain.explorerTx(h)); return; }
+    if (LIVE) { const h = await chain.sell(n); await refresh(); setMode(null); flash(`${TAG}: sold ${n} $PATRON for ${fmt(v)}`, chain.explorerTx(h)); return; }
     await new Promise((r) => setTimeout(r, 900));
     save({ ...st, pool: st.pool + n, held: st.held - n }); setMode(null); flash(`DEMO: sold ${n} $PATRON for ${fmt(v)}`);
   };
@@ -94,7 +104,7 @@ export default function PatronDrop() {
           <div className="pd-card-h"><h1>PATRON Edition 0</h1><p>$PATRON</p></div>
           <Art />
           <div className="pd-card-f">
-            <div><b>{fmt(price)}{LIVE ? "" : " USD"}</b><small>{st.pool}/{SUPPLY} available</small></div>
+            <div><b><Px v={price} />{LIVE ? "" : " USD"}</b><small>{st.pool}/{SUPPLY} available</small></div>
             <button className="pd-stats" onClick={() => setMode("stats")}><em>Dynamic Pricing Stats</em><span>?</span></button>
           </div>
         </section>
@@ -157,7 +167,7 @@ function Trade({ kind, st, addr, connect, onDone }: { kind: "buy" | "sell"; st: 
     <div className="pd-mcard">
       <div className="pd-mh">{kind === "buy" ? "Pay" : "Sell"} <span className={`pd-demo ${LIVE ? "live" : ""}`}>{TAG}</span></div>
       <Art small />
-      <div className="pd-card-f"><div><b>{fmt(v)}</b><small>{st.pool}/{SUPPLY} available</small></div><Stepper n={n} set={setN} max={max} /></div>
+      <div className="pd-card-f"><div><b><Px v={v} /></b><small>{st.pool}/{SUPPLY} available</small></div><Stepper n={n} set={setN} max={max} /></div>
     </div>
     <div className="pd-mbody">
       <em>{kind === "buy" ? "How do you want to pay?" : "What do you want to receive?"}</em>
@@ -244,11 +254,13 @@ function PriceSection({ st }: { st: St }) {
     <section className="pd-panel">
       <div className="pd-ph"><b>Price</b>
         <div className="pd-tabs"><button className={view === "history" ? "on" : ""} onClick={() => setView("history")}>History</button><button className={view === "curve" ? "on" : ""} onClick={() => setView("curve")}>Curve</button></div></div>
-      <div className="pd-pbig">{fmt(now)}{LIVE ? "" : " USD"}<small> next token</small></div>
+      <div className="pd-pbig"><Px v={now} />{LIVE ? "" : " USD"}<small> next token</small></div>
       <svg viewBox={`0 0 ${W} ${H}`} className="pd-chart">
         <path d={d + ` L${W},${H} L0,${H}Z`} fill="var(--pd-red)" opacity=".08" />
         <path d={d} fill="none" stroke="var(--pd-red)" strokeWidth="2" />
-        <circle cx={X(mark)} cy={Y(useHist ? now : buyCost(st.pool, 1))} r="5" fill="var(--pd-red)" />
+        {ys.map((v, i) => <circle key={i} cx={X(i)} cy={Y(v)} r="6" fill="transparent"><title>{fmt(v)}</title></circle>)}
+        <circle cx={X(mark)} cy={Y(useHist ? now : buyCost(st.pool, 1))} r="5" fill="var(--pd-red)"><title>{"Now " + fmt(now)}</title></circle>
+        {LIVE && LOADED && <><text x="2" y="10" fontSize="9" fill="#888">{fmtUsd(mx * seiUsd())}</text><text x="2" y={H - 2} fontSize="9" fill="#888">{fmtUsd(mn * seiUsd())}</text></>}
       </svg>
       <small className="pd-fine">{useHist ? `${fills!.length} on-chain trade${fills!.length === 1 ? "" : "s"} (Bought/Sold events on ${NET.chainName})` : fills === null ? "Loading on-chain trades…" : view === "history" ? "No trades yet, showing the curve. Dot = now." : "Price vs. tokens sold (x·y=k). Dot = now."}</small>
       {!!fills?.length && <div className="pd-fills">{fills.slice(-4).reverse().map((f) => (
