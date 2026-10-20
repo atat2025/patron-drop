@@ -8,6 +8,7 @@ import EasyLogin from "./EasyLogin";
 import { Countdown, LiquidityGauge } from "./DropMeters";
 import { loadMarketFills, type Fill } from "@/lib/launchHistory";
 import { NET, isTestnet } from "@/lib/network";
+import { JapanNotice, ResidencyCheck, useResidency } from "@/lib/residency";
 import { useSeiUsd, usdSei, fmtUsd, fmtSei, seiUsd } from "@/lib/seiUsd";
 
 /* Unisocks-style constant-product curve (x*y=k), priced client-side in USD. DEMO ONLY. */
@@ -99,7 +100,8 @@ export default function PatronDrop() {
       </header>}
 
       <main className="pd-main">
-        {LIVE && isTestnet && <div className="pd-tn" role="note"><b>テストネット</b> 試し用のネットワークです。お金の価値はありません。</div>}
+        {LIVE && isTestnet && <div className="pd-tn" role="note"><b>TESTNET</b> Test network. Tokens have no real value.</div>}
+        <JapanNotice />
         <section className="pd-card">
           <div className="pd-card-h"><h1>PATRON Edition 0</h1><p>$PATRON</p></div>
           <Art />
@@ -116,17 +118,17 @@ export default function PatronDrop() {
           {chainErr && <div className="pd-err">{chainErr}</div>}
         </div>
         <button className="pd-buy" onClick={() => setMode("buy")}>Buy</button>
-        {LIVE && isTestnet && <button className="pd-sec cb-open" style={{ fontSize: 20 }} onClick={() => setMode("easy")}>かんたんログインで買う（ウォレット不要）<br /><small>テストネット専用・実際のお金は使えません</small></button>}
-        {LIVE && <button className="pd-sec cb-open" onClick={() => setMode("card")}>カード / Apple PayでPATRONを買う</button>}
+        {LIVE && isTestnet && <button className="pd-sec cb-open" style={{ fontSize: 20 }} onClick={() => setMode("easy")}>Easy login: buy without a wallet<br /><small>Testnet only · no real money</small></button>}
+        {LIVE && <button className="pd-sec cb-open" onClick={() => setMode("card")}>Buy PATRON with card / Apple Pay</button>}
         <div className="pd-row">
           <button className="pd-sec" disabled={!addr || st.held < 1} onClick={() => setMode("sell")}>Sell</button>
           <button className="pd-sec" disabled={!addr || st.held < 1} onClick={() => setMode("redeem")}>Redeem</button>
         </div>
         <PriceSection st={st} />
         <StakeSection held={st.held} />
-        {!embed && <a className="pd-sec pd-link" href="vault/">PATRON Vault: 自動売買（{isTestnet ? "テストネット" : "本番"}） →</a>}
+        {!embed && <a className="pd-sec pd-link" href="vault/">PATRON Vault: automated strategies ({isTestnet ? "testnet" : "mainnet"}) →</a>}
         {!embed && EXT && <p className="pd-foot"><a href={EXT} target="_blank" rel="noreferrer">patron.red →</a></p>}
-        <p className="pd-foot">{LIVE ? (isTestnet ? "テストネット: Sei testnetのSEIを使います（お金の価値はありません）。配送先はブロックチェーンに載せません。" : "Shipping details are never put on-chain.") : "Demo mode: no real payments, tokens or shipping. State is stored only in this browser."}</p>
+        <p className="pd-foot">{LIVE ? (isTestnet ? "TESTNET: transactions use Sei testnet SEI (no real value). Shipping details are never put on-chain." : "Shipping details are never put on-chain.") : "Demo mode: no real payments, tokens or shipping. State is stored only in this browser."}</p>
       </main>
 
       {mode && <div className="pd-ov" onClick={() => setMode(null)}>
@@ -162,7 +164,8 @@ function Trade({ kind, st, addr, connect, onDone }: { kind: "buy" | "sell"; st: 
   const max = kind === "buy" ? Math.max(1, st.pool - 1) : Math.max(1, st.held);
   const v = kind === "buy" ? buyCost(st.pool, n) : sellGain(st.pool, n);
   const [err, setErr] = useState<string | null>(null);
-  const go = async () => { setBusy(true); setErr(null); try { await onDone(n, v, pay); } catch (e) { setErr((e as Error).message.split("\n")[0]); } setBusy(false); };
+  const resOk = useResidency();
+  const go = async () => { if (!resOk) return; setBusy(true); setErr(null); try { await onDone(n, v, pay); } catch (e) { setErr((e as Error).message.split("\n")[0]); } setBusy(false); };
   return <>
     <div className="pd-mcard">
       <div className="pd-mh">{kind === "buy" ? "Pay" : "Sell"} <span className={`pd-demo ${LIVE ? "live" : ""}`}>{TAG}</span></div>
@@ -176,7 +179,7 @@ function Trade({ kind, st, addr, connect, onDone }: { kind: "buy" | "sell"; st: 
       </select>
       <small className="pd-fine">Includes 0.3% curve fee · avg {fmt(v / n)} each</small>
       {!addr && !(LIVE && kind === "buy") ? <button className="pd-buy" onClick={connect}>Connect Wallet</button>
-        : <button className="pd-buy" disabled={busy || !isFinite(v)} onClick={go}>{busy ? (LIVE ? "Confirm in wallet…" : "Confirming (demo)…") : `${kind === "buy" ? "Buy" : "Sell"} ${n} $PATRON (${TAG.toLowerCase()})`}</button>}
+        : <><ResidencyCheck /><button className="pd-buy" disabled={busy || !isFinite(v) || !resOk} onClick={go}>{busy ? (LIVE ? "Confirm in wallet…" : "Confirming (demo)…") : `${kind === "buy" ? "Buy" : "Sell"} ${n} $PATRON (${TAG.toLowerCase()})`}</button></>}
       {usdcPay && <small className="pd-fine">≈ {uq == null ? "…" : (Number(uq) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 4 })} {pay} · one free signature (permit, no approve tx) + one transaction{pay === "mUSDC" && <> · <a onClick={() => chain.mintTestUsdc().catch((e) => setErr((e as Error).message.split("\n")[0]))}>get 100 test mUSDC</a></>}{pay === "USDC" && <> · <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">USDC faucet</a></>}</small>}
       {LIVE && <small className="pd-fine">1% slippage protection{kind === "sell" ? "; first sell asks for an approve tx" : ""}{kind === "buy" && !addr ? " · wallet connects and switches to Sei testnet automatically" : ""}.</small>}
       {err && <div className="pd-err">{err}</div>}

@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatEther } from "viem";
 import * as V from "@/lib/vaultChain";
-import { readGauge, yen, SEI_JPY, GAUGE, type GaugeData } from "@/lib/gauge";
+import { readGauge, GAUGE, type GaugeData } from "@/lib/gauge";
+/** Gauge stages are stored in JPY on-chain; shown in USD (approx. FX) for the overseas release. */
+const JPY_PER_USD = Number(process.env.NEXT_PUBLIC_JPY_PER_USD || "158");
+const yen = (jpy: number) => "$" + Math.round(jpy / JPY_PER_USD).toLocaleString("en-US");
 
 const TARGET = process.env.NEXT_PUBLIC_COUNTDOWN_TARGET || "2026-11-30T00:00:00+09:00";
 const LABEL = process.env.NEXT_PUBLIC_COUNTDOWN_LABEL || "Listing in";
@@ -29,7 +32,7 @@ export function Countdown() {
 export function LiquidityGauge() {
   const [d, setD] = useState<GaugeData | null>(null);
   useEffect(() => { const load = () => readGauge().then(setD).catch(() => {}); load(); const i = setInterval(load, 20000); return () => clearInterval(i); }, []);
-  if (!d) return <div className="dm-g"><div className="dm-h"><span>予約・応援額を含む目標</span></div><small>Loading…</small></div>;
+  if (!d) return <div className="dm-g"><div className="dm-h"><span>Goal incl. pledges & reservations</span></div><small>Loading…</small></div>;
   const total = d.onchainJPY + d.manualJPY;
   const reached = d.stages.filter((s) => total >= s).length;
   const next = d.stages[reached];
@@ -39,22 +42,22 @@ export function LiquidityGauge() {
   const w = (x: number) => `${Math.min(100, (x / scale) * 100)}%`;
   return (
     <div className="dm-g">
-      <div className="dm-h"><span>予約・応援額を含む目標 · {next ? `Stage ${reached + 1}` : "All stages reached"}</span><b>{next ? `${pctNext.toFixed(1)}% to next` : "100%"}</b></div>
+      <div className="dm-h"><span>Goal incl. pledges & reservations · {next ? `Stage ${reached + 1}` : "All stages reached"}</span><b>{next ? `${pctNext.toFixed(1)}% to next` : "100%"}</b></div>
       <div className="dm-bar dm-seg">
-        <i className="on" style={{ width: w(total) }} title="予約・応援額を含む合計" />
+        <i className="on" style={{ width: w(total) }} title="Total incl. pledges" />
         {d.stages.map((s, k) => s <= scale && <span key={k} className="dm-tick" style={{ left: w(s) }} />)}
       </div>
       <div className="dm-leg">
-        <div><i className="on" />オンチェーン（Vault TVL）<b>{yen(d.onchainJPY)}</b></div>
-        <div><i className="on" />予約・応援額<b>{yen(d.manualJPY)}</b></div>
-        {d.note && <p className="dm-note">運営メモ: {d.note}</p>}
-        <div className="dm-tot">合計 <b>{yen(total)}</b>{next && <> / 次のステージ {yen(next)}</>}</div>
-        <p className="dm-note">※予約・応援でいただいた額を含みます。ブロックチェーン上の購入額とは異なります。</p>
+        <div><i className="on" />On-chain (Vault TVL)<b>{yen(d.onchainJPY)}</b></div>
+        <div><i className="on" />Pledges & reservations<b>{yen(d.manualJPY)}</b></div>
+        {d.note && <p className="dm-note">Team note: {d.note}</p>}
+        <div className="dm-tot">Total <b>{yen(total)}</b>{next && <> / next stage {yen(next)}</>}</div>
+        <p className="dm-note">* Includes pledges and reservations, so it differs from on-chain purchases. Amounts in USD at an approximate rate.</p>
       </div>
       <div className="dm-stages">{d.stages.map((s, k) => <span key={k} className={total >= s ? "ok" : ""}>Stage {k + 1}: {yen(s)}</span>)}</div>
-      <small>On-chain: {d.tvlPAT.toLocaleString("en-US", { maximumFractionDigits: 2 })} PAT in <Link href="/vault/">PatronVault</Link> × PAT {d.patSEI.toPrecision(3)} SEI (PatronLaunch) × SEI/JPY {SEI_JPY} <em>（仮）</em>. Sei testnet.</small>
-      <details className="dm-hist"><summary>変更履歴 / Change history ({d.history.length})</summary>
-        {d.history.length ? d.history.map((h, k) => <div key={k}><span>{new Date(h.at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}</span>{h.kind === 1 ? <b>運営追加分 → {yen(h.amountJPY)}{h.note && ` (${h.note})`}</b> : <b>ステージ → {h.stages.map(yen).join(" / ")}</b>}</div>) : <p>No changes</p>}
+      <small>On-chain: {d.tvlPAT.toLocaleString("en-US", { maximumFractionDigits: 2 })} PAT in <Link href="/vault/">PatronVault</Link> × PAT {d.patSEI.toPrecision(3)} SEI (PatronLaunch), valued in USD (approx.). Sei testnet.</small>
+      <details className="dm-hist"><summary>Change history ({d.history.length})</summary>
+        {d.history.length ? d.history.map((h, k) => <div key={k}><span>{new Date(h.at).toLocaleString("en-US")}</span>{h.kind === 1 ? <b>Team-added → {yen(h.amountJPY)}{h.note && ` (${h.note})`}</b> : <b>Stages → {h.stages.map(yen).join(" / ")}</b>}</div>) : <p>No changes</p>}
         <a href={`https://seitrace.com/address/${GAUGE}?chain=atlantic-2`} target="_blank" rel="noreferrer">GaugeConfig contract</a>
       </details>
     </div>
@@ -74,7 +77,7 @@ export function FarmingGauge() {
     <Link href="/vault/" className="dm-g">
       <div className="dm-h"><span>Farming progress</span><b>{tvl == null ? "—" : pct.toFixed(2) + "%"}</b></div>
       <div className="dm-bar"><i style={{ width: `${pct}%` }} /></div>
-      <small>{tvl == null ? "Loading…" : f(tvl)} PAT farming / {f(FARM_TARGET)} PAT <em>target（仮）</em> · Deposit →</small>
+      <small>{tvl == null ? "Loading…" : f(tvl)} PAT farming / {f(FARM_TARGET)} PAT <em>target (provisional)</em> · Deposit →</small>
     </Link>
   );
 }

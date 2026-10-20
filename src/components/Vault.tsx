@@ -4,6 +4,7 @@ import { formatEther, parseEther, type Address } from "viem";
 import * as S from "@/lib/strategyVaults";
 import { NET, isTestnet, explorerTx, explorerAddr } from "@/lib/network";
 import { useSeiUsd, usdSei } from "@/lib/seiUsd";
+import { JapanNotice, ResidencyCheck, useResidency } from "@/lib/residency";
 
 /* PATRON Vault: real on-chain strategy vaults (PatronStrategyVault) on the PATRON Edition 0 curve.
    NAV, trades and charts are read from the contracts; the keeper log (reasons + tx links) comes from the keeper job. */
@@ -13,7 +14,7 @@ const sei = (v: bigint) => usdSei(Number(formatEther(v)));
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 const ago = (t: number) => { const s = Math.max(0, Math.floor(Date.now() / 1000 - t)); return s < 3600 ? `${Math.max(1, Math.floor(s / 60))}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`; };
 const KIND = ["checkpoint", "Buy", "Sell", "Deposit", "Withdraw"];
-const LABEL = NET.labelJa;
+const LABEL = NET.label;
 
 function stats(v: S.VaultView) {
   const series = [...v.recs.map((r) => Number(r.ppsNano) / 1e9), Number(v.pps) / 1e18];
@@ -34,6 +35,7 @@ const Dot = ({ on }: { on: boolean }) => <i className="pv-dot" style={{ backgrou
 
 export function Vault() {
   useSeiUsd();
+  const resOk = useResidency();
   const [amt, setAmt] = useState("0.05");
   const [sid, setSid] = useState(NET.vaults[0]?.id || "");
   const [confirm, setConfirm] = useState(false);
@@ -44,13 +46,13 @@ export function Vault() {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ t: string; h?: string; err?: boolean } | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
-  const refresh = async (u = user) => { try { setVs(await S.readAll(u)); setErr(null); } catch (e) { setErr("読み込みに失敗しました: " + (e as Error).message.split("\n")[0]); } };
+  const refresh = async (u = user) => { try { setVs(await S.readAll(u)); setErr(null); } catch (e) { setErr("Could not load vaults: " + (e as Error).message.split("\n")[0]); } };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { refresh(); const t = setInterval(() => refresh(), 10000); return () => clearInterval(t); }, [user]);
   useEffect(() => { S.readKeeperLog().then(setLog); const t = setInterval(() => S.readKeeperLog().then(setLog), 60000); return () => clearInterval(t); }, []);
   const run = async (label: string, f: () => Promise<string>) => {
     setBusy(label); setNote(null);
-    try { const h = await f(); setNote({ t: `${label}: 完了`, h }); await refresh(); }
+    try { const h = await f(); setNote({ t: `${label}: confirmed`, h }); await refresh(); }
     catch (e) { setNote({ t: (e as Error).message.split("\n")[0], err: true }); }
     setBusy(null);
   };
@@ -74,44 +76,44 @@ export function Vault() {
   if (!NET.vaults.length) return <section id="vault" className="pv"><div className="pv-disc">Vault is not deployed on this network yet.</div></section>;
   return (
     <section id="vault" className="pv">
-      <div className="pv-disc">{LABEL} · {isTestnet ? "試し用のネットワークで、お金の価値はありません。" : ""} 自動売買は本当にブロックチェーン上で動いています（Sei {isTestnet ? "testnet" : "mainnet"}）。数字はすべて契約から読み取った実際の値です。投資の助言ではありません。本番の前に法律の確認が必要です。</div>
+      <div className="pv-disc">{LABEL} · {isTestnet ? "Test network, no real value. " : ""}Strategies trade for real on-chain (Sei {isTestnet ? "testnet" : "mainnet"}). Every number is read from the vault contracts. Not investment advice. Contracts are not audited.</div>
       {err && <div className="pd-err">{err}</div>}
 
       <div className="pv-grid2">
         <div className="pv-card">
-          <div className="pv-h"><h3>SEIを預ける</h3><span className="pd-demo live">{NET.label}</span></div>
+          <div className="pv-h"><h3>Deposit SEI</h3><span className="pd-demo live">{NET.label}</span></div>
           <label className="pv-lab">Amount</label>
           <div className="pv-inp"><input inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span>SEI</span></div>
-          <div className="pv-quick">{["0.02", "0.05", "0.1"].map((v) => <button key={v} onClick={() => setAmt(v)}>{v}</button>)}<span>{NET.faucet && <a href={NET.faucet} target="_blank" rel="noreferrer">テスト用SEIをもらう ↗</a>}</span></div>
+          <div className="pv-quick">{["0.02", "0.05", "0.1"].map((v) => <button key={v} onClick={() => setAmt(v)}>{v}</button>)}<span>{NET.faucet && <a href={NET.faucet} target="_blank" rel="noreferrer">Get test SEI ↗</a>}</span></div>
           <label className="pv-lab">Strategy</label>
           <div className="pv-pick">
             {rows.map(({ v, m, s }) => (
               <button key={v.id} className={sid === v.id ? "on" : ""} onClick={() => setSid(v.id)}><Dot on={!v.paused} /><b>{m.name}</b><em className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</em></button>
             ))}
-            {!vs && <p className="pv-mut">読み込み中…</p>}
+            {!vs && <p className="pv-mut">Loading…</p>}
           </div>
           {!user ? <button className="pd-buy" onClick={doConnect}>Connect wallet</button>
-            : <button className="pd-buy" disabled={wei < 1000000000000000n || !!busy} onClick={() => setConfirm(true)}>{wei < 1000000000000000n ? "0.001 SEI以上" : "内容を確認"}</button>}
-          {note && <div className={note.err ? "pd-err" : "pv-ok"}>{note.t}{note.h && <> · <a href={explorerTx(note.h)} target="_blank" rel="noreferrer">記録を見る ↗</a></>}</div>}
+            : <button className="pd-buy" disabled={wei < 1000000000000000n || !!busy} onClick={() => setConfirm(true)}>{wei < 1000000000000000n ? "Min 0.001 SEI" : "Review deposit"}</button>}
+          {note && <div className={note.err ? "pd-err" : "pv-ok"}>{note.t}{note.h && <> · <a href={explorerTx(note.h)} target="_blank" rel="noreferrer">view tx ↗</a></>}</div>}
         </div>
 
         <div className="pv-card">
-          <div className="pv-h"><h3>あなたの預け入れ</h3><span className="pv-mut">on-chain · TVL {sei(tvl)}</span></div>
-          {pos.length === 0 && <p className="pv-mut">{user ? "まだ預けていません。" : "ウォレットをつなぐと表示されます。"}</p>}
+          <div className="pv-h"><h3>Your deposits</h3><span className="pv-mut">on-chain · TVL {sei(tvl)}</span></div>
+          {pos.length === 0 && <p className="pv-mut">{user ? "No deposits yet." : "Connect your wallet to see deposits."}</p>}
           {pos.map(({ v, m }) => (
             <div key={v.id} className="pv-pos">
               <div><b>{m.name}</b><small><Dot on={!v.paused} />{v.tok} PATRON + {sei(v.sei)} in vault</small></div>
-              <div className="r"><b>{sei(v.mineValue)}</b><small>今の価値（売却した場合）</small></div>
-              <button className="pv-wd" disabled={!!busy} onClick={() => run("引き出し", () => S.withdraw(v.address, v.mine))}>{busy === "引き出し" ? "…" : "全部引き出す"}</button>
+              <div className="r"><b>{sei(v.mineValue)}</b><small>current value (if sold now)</small></div>
+              <button className="pv-wd" disabled={!!busy} onClick={() => run("Withdraw", () => S.withdraw(v.address, v.mine))}>{busy === "Withdraw" ? "…" : "Withdraw all"}</button>
             </div>))}
           <div className="pv-h" style={{ marginTop: 14 }}><h3>Live activity</h3><span className="pv-live"><Dot on />{lastRun ? `keeper ${ago(Date.parse(lastRun) / 1000)} ago` : "on-chain"}</span></div>
           <ul className="pv-feed">{feed.map((f) => <li key={f.k} title={f.why}><b>{f.name}</b> {f.txt}{f.tx && <> · <a href={explorerTx(f.tx)} target="_blank" rel="noreferrer">tx ↗</a></>}<span>{f.ago}</span></li>)}
-            {!feed.length && <li>まだ取引はありません。</li>}</ul>
+            {!feed.length && <li>No trades yet.</li>}</ul>
         </div>
       </div>
 
       <div className="pv-h" style={{ marginTop: 26 }}><h2 className="pv-h2">Auto strategies</h2></div>
-      <div className="pv-legend"><span><Dot on />稼働中（keeperが定期的に売買）</span><span>1口の価値（NAV / share）の推移</span></div>
+      <div className="pv-legend"><span><Dot on />Live (keeper trades on a schedule)</span><span>Charts show NAV per share</span></div>
       <div className="pv-tiles">
         {rows.map(({ v, m, s }) => (
           <button key={v.id} className="pv-tile" onClick={() => setDetail(v.id)}>
@@ -125,7 +127,7 @@ export function Vault() {
       </div>
 
       <div className="pv-card" style={{ marginTop: 20 }}>
-        <div className="pv-h"><h3>Leaderboard</h3><span className="pv-mut">1口の価値の伸び順 · on-chain</span></div>
+        <div className="pv-h"><h3>Leaderboard</h3><span className="pv-mut">by NAV/share return · on-chain</span></div>
         <table className="pv-board"><thead><tr><th>#</th><th>Strategy</th><th>NAV</th><th>Return</th><th>DD</th><th>Trades</th></tr></thead><tbody>
           {board.map(({ v, m, s }, i) => <tr key={v.id} onClick={() => setDetail(v.id)}><td>{i + 1}</td><td><b>{m.name}</b></td><td>{sei(v.nav)}</td><td className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</td><td>{s.dd.toFixed(2)}%</td><td>{s.trades}</td></tr>)}
         </tbody></table>
@@ -134,14 +136,15 @@ export function Vault() {
       {confirm && chosen && (
         <div className="pv-modal" onClick={() => setConfirm(false)}>
           <div className="pv-card pv-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="pv-h"><h3>預け入れの確認</h3><span className="pd-demo live">{NET.label}</span></div>
+            <div className="pv-h"><h3>Confirm deposit</h3><span className="pd-demo live">{NET.label}</span></div>
             <div className="pv-big">{usdSei(Number(amt) || 0).split(" (")[0]} <small>({amt} SEI)</small></div>
             <div className="pv-row"><span>Strategy</span><b>{chosen.m.name}</b></div>
-            <div className="pv-row"><span>ルール</span><b style={{ textAlign: "right", maxWidth: 220 }}>{chosen.m.ja}</b></div>
+            <div className="pv-row"><span>Rule</span><b style={{ textAlign: "right", maxWidth: 220 }}>{chosen.m.rule}</b></div>
             <div className="pv-row"><span>Max drawdown</span><b>{chosen.s.dd.toFixed(2)}%</b></div>
-            <p className="pv-warn">{LABEL}。keeperはPATRONの売り買いしかできず、あなたのお金を引き出すことはできません。引き出しはいつでもあなただけができます。投資の助言ではありません。</p>
+            <ResidencyCheck />
+            <p className="pv-warn">{LABEL}. The keeper can only buy or sell PATRON on the whitelisted market and can never withdraw your funds. Only you can withdraw, at any time. Not investment advice.</p>
             <div className="pv-btns"><button className="pd-sec" onClick={() => setConfirm(false)}>Cancel</button>
-              <button className="pd-buy" disabled={!!busy} onClick={async () => { setConfirm(false); await run("預け入れ", () => S.deposit(chosen.v.address, wei)); }}>預ける</button></div>
+              <button className="pd-buy" disabled={!!busy || !resOk} onClick={async () => { if (!resOk) return; setConfirm(false); await run("Deposit", () => S.deposit(chosen.v.address, wei)); }} >Deposit</button></div>
           </div>
         </div>
       )}
@@ -154,9 +157,9 @@ export function Vault() {
             <div className="pv-curve"><Spark d={d.s.series} w={400} h={140} big /></div>
             <div className="pv-kpi"><span>NAV<b>{sei(d.v.nav)}</b></span><span>Holdings<b>{d.v.tok} PATRON + {sei(d.v.sei)}</b></span><span>Trades<b>{d.s.trades}</b></span></div>
             <h4 className="pv-lab">History (on-chain)</h4>
-            <table className="pv-board"><tbody>{[...d.v.recs].reverse().slice(0, 12).map((r, i) => <tr key={i}><td>{new Date(r.time * 1000).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[r.kind]}</td><td>{r.kind === 1 || r.kind === 2 ? `${r.amount} PATRON` : ""}</td><td>{r.seiGwei ? usdSei(Number(r.seiGwei) / 1e9) : ""}</td><td>NAV {usdSei(Number(r.navGwei) / 1e9)}</td></tr>)}</tbody></table>
+            <table className="pv-board"><tbody>{[...d.v.recs].reverse().slice(0, 12).map((r, i) => <tr key={i}><td>{new Date(r.time * 1000).toLocaleString("en-US", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[r.kind]}</td><td>{r.kind === 1 || r.kind === 2 ? `${r.amount} PATRON` : ""}</td><td>{r.seiGwei ? usdSei(Number(r.seiGwei) / 1e9) : ""}</td><td>NAV {usdSei(Number(r.navGwei) / 1e9)}</td></tr>)}</tbody></table>
             <small className="pv-mut">Vault <a href={explorerAddr(d.v.address)} target="_blank" rel="noreferrer">{d.v.address.slice(0, 10)}… ↗</a> · keeper <a href={explorerAddr(d.v.keeper)} target="_blank" rel="noreferrer">{d.v.keeper.slice(0, 10)}… ↗</a></small>
-            <button className="pd-buy" onClick={() => { setSid(d.v.id); setDetail(null); document.getElementById("vault")?.scrollIntoView({ behavior: "smooth" }); }} disabled={d.v.paused}>{d.v.paused ? "停止中" : "この戦略に預ける"}</button>
+            <button className="pd-buy" onClick={() => { setSid(d.v.id); setDetail(null); document.getElementById("vault")?.scrollIntoView({ behavior: "smooth" }); }} disabled={d.v.paused}>{d.v.paused ? "Paused" : "Deposit into this strategy"}</button>
           </div>
         </div>
       )}
@@ -173,9 +176,10 @@ export default function VaultPage({ home = "", drop = "../" }: { home?: string; 
         <div className="pd-actions"><span className="pd-demo live">{NET.label}</span><a className="pd-wallet" href={drop}>PATRON Edition 0</a></div>
       </header>
       <main className="pv-main">
-        {isTestnet && <div className="pd-tn" role="note"><b>テストネット</b> 試し用のネットワークです。お金の価値はありません。</div>}
+        {isTestnet && <div className="pd-tn" role="note"><b>TESTNET</b> Test network. Tokens have no real value.</div>}
+        <JapanNotice />
         <section className="pd-card pv-hero">
-          <div className="pd-card-h"><h1>PATRON Vault</h1><p>SEIを預けて、戦略を選ぶと自動で売買します</p></div>
+          <div className="pd-card-h"><h1>PATRON Vault</h1><p>Deposit SEI, pick a strategy, it trades automatically</p></div>
           <span className="pd-chip">{NET.label}</span>
         </section>
         <Vault />

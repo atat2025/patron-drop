@@ -4,10 +4,10 @@ import { pub, PATRON_CHAIN, addSeiTestnet } from "./patronChain";
 import { NET } from "./network";
 
 /** PatronStrategyVault x3 (one strategy each). Addresses come from lib/network.ts. */
-export const META: Record<string, { name: string; agent: string; rule: string; ja: string }> = {
-  momentum: { name: "Night Owl Momentum", agent: "Agent A (fictional)", rule: "Buys when the price is above its recent average, sells when it falls below.", ja: "値上がりが続くときに買い、下がり始めたら売ります。" },
-  meanrev: { name: "Mean Revert Lite", agent: "Agent B (fictional)", rule: "Sells when the price is stretched above its average, buys back when it dips below.", ja: "平均より高すぎたら売り、安すぎたら買い戻します。" },
-  dca: { name: "Steady Stack DCA", agent: "Agent C (fictional)", rule: "Buys 1 PATRON on a schedule while cash > 40%, takes profit above +3%.", ja: "決まった間隔で少しずつ買い、3%上がったら一部を売ります。" },
+export const META: Record<string, { name: string; agent: string; rule: string }> = {
+  momentum: { name: "Night Owl Momentum", agent: "Agent A (fictional)", rule: "Buys when the price is above its recent average, sells when it falls below." },
+  meanrev: { name: "Mean Revert Lite", agent: "Agent B (fictional)", rule: "Sells when the price is stretched above its average, buys back when it dips below." },
+  dca: { name: "Steady Stack DCA", agent: "Agent C (fictional)", rule: "Buys 1 PATRON on a schedule while cash > 40%, takes profit above +3%." },
 };
 export const vaultAbi = parseAbi([
   "function summary() view returns (uint256 nav, uint256 seiBal, uint256 tokenBal, uint256 totalShares, uint256 pps, uint256 price, uint256 nRecs, address keeper, bool paused)",
@@ -41,7 +41,7 @@ export async function readKeeperLog(): Promise<KeeperEntry[]> {
 
 const eth = () => (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
 export async function connect(): Promise<Address> {
-  const e = eth(); if (!e) throw new Error("ウォレットが見つかりません（MetaMaskなどを入れてください）");
+  const e = eth(); if (!e) throw new Error("No wallet found (install MetaMask or similar)");
   const [a] = (await e.request({ method: "eth_requestAccounts" })) as Address[];
   if (Number(await e.request({ method: "eth_chainId" })) !== PATRON_CHAIN.id) await addSeiTestnet();
   return a;

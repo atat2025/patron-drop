@@ -50,7 +50,7 @@ const eth = () => (typeof window !== "undefined" ? (window as unknown as { ether
 export const hasWallet = () => Boolean(eth());
 
 export async function addSeiTestnet() {
-  const e = eth(); if (!e) throw new Error("ウォレットが見つかりません（MetaMaskなどを入れてください）");
+  const e = eth(); if (!e) throw new Error("No wallet found (install MetaMask or similar)");
   const hex = "0x" + PATRON_CHAIN.id.toString(16);
   try { await e.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] }); }
   catch {

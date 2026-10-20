@@ -14,8 +14,12 @@ async function scan(addr: Address, from: bigint, to: bigint, tokenDec: number, m
   // newest first so a cap never drops the most recent trades
   for (let t = to; t >= from && ranges.length < maxWindows; t -= WIN) ranges.push([t - WIN + 1n < from ? from : t - WIN + 1n, t]);
   const out: Fill[] = [];
-  for (let i = 0; i < ranges.length; i += 12) {
-    const res = await Promise.all(ranges.slice(i, i + 12).map(([f, t]) => pub.getLogs({ address: addr, events: [bought, sold], fromBlock: f, toBlock: t }).catch(() => [])));
+  const get = async (f: bigint, t: bigint) => { // retry: the public RPC rate-limits bursts, a silent miss would hide recent trades
+    for (let k = 0; k < 4; k++) { try { return await pub.getLogs({ address: addr, events: [bought, sold], fromBlock: f, toBlock: t }); } catch { await new Promise((r) => setTimeout(r, 400 * (k + 1))); } }
+    return [];
+  };
+  for (let i = 0; i < ranges.length; i += 6) {
+    const res = await Promise.all(ranges.slice(i, i + 6).map(([f, t]) => get(f, t)));
     for (const logs of res) for (const l of logs) {
       const a = l.args as { amount: bigint; cost?: bigint; proceeds?: bigint; buyer?: string; seller?: string };
       const amount = tokenDec ? Number(formatEther(a.amount)) : Number(a.amount), sei = Number(formatEther(a.cost ?? a.proceeds ?? 0n));

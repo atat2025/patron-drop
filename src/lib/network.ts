@@ -3,7 +3,7 @@
  *  Any address left empty turns that feature off instead of pointing at the wrong chain. */
 export type NetName = "testnet" | "mainnet";
 export interface NetConfig {
-  name: NetName; label: string; labelJa: string; chainId: number; chainName: string; rpc: string;
+  name: NetName; label: string; chainId: number; chainName: string; rpc: string;
   explorer: string; explorerChain: string; seiscan: string;
   market: string; token: string; marketFromBlock: bigint;
   vaults: { id: string; address: string }[];
@@ -13,7 +13,7 @@ export interface NetConfig {
 
 const NETS: Record<NetName, NetConfig> = {
   testnet: {
-    name: "testnet", label: "TESTNET", labelJa: "テストネット", chainId: 1328, chainName: "Sei Testnet (atlantic-2)",
+    name: "testnet", label: "TESTNET", chainId: 1328, chainName: "Sei Testnet (atlantic-2)",
     rpc: "https://evm-rpc-testnet.sei-apis.com", explorer: "https://seitrace.com", explorerChain: "atlantic-2", seiscan: "https://testnet.seiscan.io",
     market: "0xB4Bf3BbA6BD96D8C1736940c75d85E4EA4b02039", token: "0x322d1A62ca7505827baedC726949168Ff06b106f", marketFromBlock: 276662707n,
     vaults: [
@@ -25,11 +25,18 @@ const NETS: Record<NetName, NetConfig> = {
     faucet: "https://docs.sei.io/learn/faucet",
   },
   mainnet: {
-    name: "mainnet", label: "MAINNET", labelJa: "本番", chainId: 1329, chainName: "Sei",
+    name: "mainnet", label: "MAINNET", chainId: 1329, chainName: "Sei",
     rpc: "https://evm-rpc.sei-apis.com", explorer: "https://seitrace.com", explorerChain: "pacific-1", seiscan: "https://seiscan.io",
-    market: "", token: "", marketFromBlock: 0n, // drop the mainnet PatronMarket / PATRON (OFT) addresses here
-    vaults: [],
-    dataUrl: "",
+    // Filled after `forge script script/DeployMainnetDrop.s.sol` (patron-perp/contracts). Empty = feature off.
+    market: "", // PatronMarket (Edition 0 curve)
+    token: "", // PATRON Edition 0 token minted by the market
+    marketFromBlock: 0n, // deploy block (chart index start)
+    vaults: [
+      { id: "momentum", address: "" },
+      { id: "meanrev", address: "" },
+      { id: "dca", address: "" },
+    ].filter((v) => v.address),
+    dataUrl: "", // e.g. https://raw.githubusercontent.com/atat2025/patron-drop/data-mainnet (keeper output)
   },
 };
 

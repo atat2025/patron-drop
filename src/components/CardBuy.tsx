@@ -5,7 +5,7 @@ import * as chain from "@/lib/patronChain";
 import { CARD, isPlaceholderKey, transakUrl } from "@/lib/cardConfig";
 
 type Step = "quote" | "pay" | "wait" | "confirm" | "buying" | "done";
-const STEPS: [Step[], string][] = [[["quote"], "数量と金額の確認"], [["pay", "wait"], "お支払い（カード / Apple Pay）"], [["confirm", "buying"], "PATRONの受け取り（ウォレットで承認）"], [["done"], "完了・領収"]];
+const STEPS: [Step[], string][] = [[["quote"], "Quote"], [["pay", "wait"], "Pay (card / Apple Pay)"], [["confirm", "buying"], "Receive PATRON (approve in wallet)"], [["done"], "Done"]];
 const f4 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 });
 const usd = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -59,45 +59,45 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
   const idx = STEPS.findIndex(([s]) => s.includes(step));
 
   return <div className="pd-mbody cb">
-    <div className="pd-mh dark">PATRON購入 <span className="pd-demo live">TESTNET</span></div>
+    <div className="pd-mh dark">Buy PATRON <span className="pd-demo live">TESTNET</span></div>
     <ol className="cb-steps">{STEPS.map(([, l], i) => <li key={l} className={i < idx ? "ok" : i === idx ? "on" : ""}><b>{i < idx ? "✓" : i + 1}</b>{l}</li>)}</ol>
 
     {step === "quote" && <>
-      <em>購入するもの：<b>$PATRON（PATRON Edition 0）</b></em>
-      <div className="pd-card-f cb-n"><div><b>{n} PATRON</b><small>受け取り予定</small></div>
+      <em>Item: <b>$PATRON (PATRON Edition 0)</b></em>
+      <div className="pd-card-f cb-n"><div><b>{n} PATRON</b><small>you receive</small></div>
         <div className="pd-step"><button onClick={() => setN(Math.max(1, n - 1))}>-</button><span>{n}</span><button onClick={() => setN(Math.min(max, n + 1))}>+</button></div></div>
       <dl className="pd-dl">
-        <dt>PATRON代金（カーブ価格）</dt><dd>{curveSei == null ? "…" : `${f4(curveSei)} SEI ≈ ${usd(curveSei * CARD.seiUsd)}`}</dd>
-        <dt>ネットワーク手数料の予備</dt><dd>{f4(CARD.gasBufferSei)} SEI ≈ {usd(CARD.gasBufferSei * CARD.seiUsd)}</dd>
-        <dt>決済手数料（Transak, 目安 {CARD.feePct}% + {usd(CARD.feeFixedUsd)}）</dt><dd>{fee == null ? "…" : usd(fee)}</dd>
-        {extra > 0.005 && <><dt>最低購入額（{usd(CARD.minUsd)}）による追加SEI（ウォレットに残ります）</dt><dd>{usd(extra)}</dd></>}
-        <dt><b>お支払い合計（目安）</b></dt><dd><b>{total == null ? "…" : usd(total)}</b></dd>
+        <dt>PATRON (curve price)</dt><dd>{curveSei == null ? "…" : `${f4(curveSei)} SEI ≈ ${usd(curveSei * CARD.seiUsd)}`}</dd>
+        <dt>Network fee buffer</dt><dd>{f4(CARD.gasBufferSei)} SEI ≈ {usd(CARD.gasBufferSei * CARD.seiUsd)}</dd>
+        <dt>Payment fee (Transak, est. {CARD.feePct}% + {usd(CARD.feeFixedUsd)})</dt><dd>{fee == null ? "…" : usd(fee)}</dd>
+        {extra > 0.005 && <><dt>Extra SEI to reach the {usd(CARD.minUsd)} minimum (stays in your wallet)</dt><dd>{usd(extra)}</dd></>}
+        <dt><b>Total (estimate)</b></dt><dd><b>{total == null ? "…" : usd(total)}</b></dd>
       </dl>
-      <small className="pd-fine">決済はパートナー（Transak）経由で、SEIを介して行われます。カードの代金でSEIを購入し、そのSEIでPATRONをカーブから購入します。手数料と為替は目安で、正確な金額はTransakの画面に表示されます。最低{usd(CARD.minUsd)}。余ったSEIはお客様のウォレットに残ります。ネットワーク手数料（ガス）はSEIで支払われます（無料ではありません）。価格は購入時点のカーブで決まり、最大1%の変動を許容します。</small>
-      <div className="pd-err cb-jp">日本にお住まいの方は、現在カード購入をご利用いただけません。{tzJp && " お使いの端末は日本時間に設定されています。"}</div>
-      <label className="pd-fine cb-chk"><input type="checkbox" checked={notJp} onChange={(e) => setNotJp(e.target.checked)} /> 私は日本の居住者ではありません（I am not a resident of Japan）</label>
-      {isPlaceholderKey() && <small className="pd-fine">⚠ テスト用の仮APIキーです（Transak STAGING、実際の請求はありません）。</small>}
-      <button className="pd-buy" disabled={!notJp || total == null} onClick={begin}>{`${n} PATRONを買う（カード / Apple Pay）`}</button>
+      <small className="pd-fine">Payment runs through our partner Transak via SEI: your card buys SEI, then that SEI buys PATRON from the curve. Fees and FX are estimates; Transak shows the exact amount. Minimum {usd(CARD.minUsd)}. Leftover SEI stays in your wallet. Network fees (gas) are paid in SEI. The price is set by the curve at purchase time, with up to 1% slippage allowed.</small>
+      <div className="pd-err cb-jp">Not available to residents of Japan.{tzJp && " Your device is set to Japan time."}</div>
+      <label className="pd-fine cb-chk"><input type="checkbox" checked={notJp} onChange={(e) => setNotJp(e.target.checked)} /> I am not a resident of Japan</label>
+      {isPlaceholderKey() && <small className="pd-fine">⚠ Placeholder test key (Transak STAGING, no real charge).</small>}
+      <button className="pd-buy" disabled={!notJp || total == null} onClick={begin}>{`Buy ${n} PATRON (card / Apple Pay)`}</button>
     </>}
 
     {(step === "pay" || step === "wait") && <>
-      <em>お支払い中：<b>{n} PATRON</b>の購入（{total == null ? "" : `目安 ${usd(total)}`}）</em>
-      <small className="pd-fine">下はパートナー（Transak）の決済画面です。本人確認やSEIの表示が出ることがあります。お支払い完了後、SEIがウォレットに届くと自動でPATRONの受け取りに進みます。</small>
+      <em>Paying for <b>{n} PATRON</b>{total == null ? "" : ` (est. ${usd(total)})`}</em>
+      <small className="pd-fine">Below is the Transak checkout. It may ask for ID and show SEI. Once SEI arrives in your wallet, we continue to the PATRON purchase automatically.</small>
       {step === "pay" && addr && total != null && <iframe className="cb-tk" title="Transak" src={transakUrl(addr, total)} allow="camera;microphone;payment" />}
-      {step === "pay" && addr && total != null && <a className="pd-fine" href={transakUrl(addr, total)} target="_blank" rel="noreferrer">決済画面が表示されない場合は、別タブで開く ↗</a>}
-      <div className="pd-fine">{step === "wait" ? "お支払い完了。ウォレットへの着金を待っています…" : "着金を確認中…"} 残高 {f4(Number(formatEther(bal)))} / 必要 {needSei == null ? "…" : f4(needSei)} SEI</div>
-      {enough && <button className="pd-buy" onClick={buy}>PATRONの受け取りへ進む</button>}
+      {step === "pay" && addr && total != null && <a className="pd-fine" href={transakUrl(addr, total)} target="_blank" rel="noreferrer">Checkout not showing? Open in a new tab ↗</a>}
+      <div className="pd-fine">{step === "wait" ? "Payment done. Waiting for SEI to arrive…" : "Checking for SEI…"} Balance {f4(Number(formatEther(bal)))} / needed {needSei == null ? "…" : f4(needSei)} SEI</div>
+      {enough && <button className="pd-buy" onClick={buy}>Continue to receive PATRON</button>}
     </>}
 
     {(step === "confirm" || step === "buying") && <>
-      <em>最後の確認：<b>{n} PATRON</b>を、届いたSEI <b>{curveSei == null ? "" : f4(curveSei)}</b>（上限）でカーブから購入します。</em>
-      <small className="pd-fine">SEIの着金を確認したので、MetaMaskの承認画面を自動で開きました（PATRONのカーブ購入トランザクション、Sei テストネット）。承認画面が閉じた場合は下のボタンで開き直せます。</small>
-      <button className="pd-buy" disabled={step === "buying"} onClick={buy}>{step === "buying" ? "ウォレットで承認中…" : `承認して ${n} PATRON を受け取る`}</button>
+      <em>Final step: buy <b>{n} PATRON</b> from the curve with the SEI you received (max <b>{curveSei == null ? "" : f4(curveSei)}</b> SEI).</em>
+      <small className="pd-fine">SEI arrived, so we opened the wallet confirmation (PATRON curve purchase). If you closed it, reopen it with the button below.</small>
+      <button className="pd-buy" disabled={step === "buying"} onClick={buy}>{step === "buying" ? "Confirm in wallet…" : `Approve and receive ${n} PATRON`}</button>
     </>}
 
     {step === "done" && rcpt && <>
-      <div className="cb-rcpt"><small>領収</small><b>{rcpt.got} PATRON</b><span>受け取りました</span></div>
-      <dl className="pd-dl"><dt>商品</dt><dd>$PATRON（Edition 0）</dd><dt>支払ったSEI（カーブ代金）</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>カード決済</dt><dd>Transak経由（領収はTransakからメールで届きます）</dd><dt>ウォレット表示</dt><dd><a onClick={() => chain.watchPatron()}>PATRONをウォレットに表示 ↗</a></dd><dt>取引</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">エクスプローラーで見る ↗</a></dd></dl>
+      <div className="cb-rcpt"><small>Receipt</small><b>{rcpt.got} PATRON</b><span>received</span></div>
+      <dl className="pd-dl"><dt>Item</dt><dd>$PATRON (Edition 0)</dd><dt>SEI paid (curve)</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>Card payment</dt><dd>via Transak (receipt by email)</dd><dt>Wallet</dt><dd><a onClick={() => chain.watchPatron()}>Show PATRON in wallet ↗</a></dd><dt>Transaction</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">View on explorer ↗</a></dd></dl>
     </>}
     {err && <div className="pd-err">{err}</div>}
   </div>;
