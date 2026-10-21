@@ -20,9 +20,6 @@ const HUMAN = [
   { cmc: 35011, slug: "kekius-maximus-vip", cg: "kekius-maximus", sym: "KEKIUS", name: "Kekius Maximus", who: "Elon Musk's X alias" },
   { cmc: 35436, slug: "alon", cg: "alon", sym: "ALON", name: "Alon", who: "Alon Cohen (pump.fun co-founder)" },
   { cmc: 35181, slug: "elon-trump-fart", cg: "elon-trump-fart", sym: "ETF500", name: "Elon Trump Fart", who: "Elon Musk & Donald Trump" },
-  { cmc: 31510, slug: "mother-iggy", cg: "mother-iggy", sym: "MOTHER", name: "Mother Iggy", who: "Iggy Azalea" },
-  { cmc: 35091, slug: "kekius-maximus-army", cg: "kekius-maximus-4", sym: "KM", name: "Kekius Maximus (army)", who: "Elon Musk alias" },
-  { cmc: 29558, slug: "super-trump-io", cg: "super-trump", sym: "STRUMP", name: "Super Trump Coin", who: "Donald Trump" },
 ];
 const nm = (b: string) => (b === "SPCX" ? "SpaceX" : (NAMES[b] ?? b).replace(/\s[^\x00-\x7F].*$/, ""));
 const fp = (x: number) => (!x ? "—" : "$" + (x >= 1000 ? x.toLocaleString("en-US", { maximumFractionDigits: 0 }) : x >= 1 ? x.toFixed(2) : (x < 1e-4 ? x.toExponential(2) : x.toPrecision(3))));
