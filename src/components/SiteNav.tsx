@@ -13,7 +13,7 @@ const MENU: { h: string; l: string; glow: string; tiles: Tile[]; sub?: string }[
   { h: "/vault/", l: "AI Trade", glow: "#3aa0ff", tiles: [{ txt: "AI", bg: "linear-gradient(135deg,#3aa0ff,#7b5cff)" }, { txt: "$", bg: "#1f9d6b" }] },
   { h: "/spot/", l: "Spot", glow: "#1f9d6b", tiles: [L("SEI.svg"), L("BTC.svg"), L("ETH.svg"), L("SOL.svg")] },
   { h: "/perp/", l: "Perpetual", glow: "#ff5c86", tiles: [L("AAPL.svg"), L("TSLA.svg"), L("NVDA.svg"), L("MSFT.svg"), L("GOLD.png")] },
-  { h: "/digitaltwin/", l: "DigitalTwin", glow: "#9b5cff", tiles: [{ img: "/dt-face.webp" }] },
+  { h: "/digitaltwin/", l: "DigitalTwin", glow: "#9b5cff", tiles: [] },
   { h: "/offerpad/", l: "OfferPad", glow: "#ff8a00", sub: "Coming soon", tiles: [] },
   { h: "/bridge/", l: "Bridge", glow: "#2ec4b6", tiles: [L("SEI.svg"), { txt: "⇄", bg: "#222" }, L("HOOD.svg")] },
 ];
