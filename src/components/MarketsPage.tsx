@@ -10,32 +10,45 @@ import type { Market } from "@/lib/types";
 
 const EQ = ["NVDA", "TSLA", "AAPL", "MSFT", "HOOD", "SPCX", "AMZN", "GOOG", "META", "AMD", "COIN", "MSTR", "TSM", "INTC"];
 const DA = ["BTC", "ETH", "SEI", "SOL", "HYPE"];
+// Person-themed memecoins (CoinMarketCap ids/slugs; prices from CoinGecko, which allows browser requests).
 const HUMAN = [
-  { img: "/logos/human/trump.png", name: "TRUMP", sub: "Official Trump" },
-  { img: "/logos/human/melania.png", name: "MELANIA", sub: "Melania Meme" },
-  { img: "/logos/human/mrbeast.jpg", name: "MrBeast", sub: "Creator" },
+  { cmc: 35336, slug: "official-trump", cg: "official-trump", sym: "TRUMP", name: "Official Trump", who: "Donald Trump" },
+  { cmc: 38151, slug: "yzy", cg: "yzy", sym: "YZY", name: "YZY Money", who: "Kanye West (Ye)" },
+  { cmc: 35347, slug: "melania-meme", cg: "melania-meme", sym: "MELANIA", name: "Official Melania Meme", who: "Melania Trump" },
+  { cmc: 9436, slug: "dogelon", cg: "dogelon-mars", sym: "ELON", name: "Dogelon Mars", who: "Elon Musk (fan)" },
+  { cmc: 42044, slug: "hunter-biden-s-laptop", cg: "hunter-biden-s-laptop-3", sym: "LAPTOP", name: "Hunter Biden's Laptop", who: "Hunter Biden" },
+  { cmc: 35011, slug: "kekius-maximus-vip", cg: "kekius-maximus", sym: "KEKIUS", name: "Kekius Maximus", who: "Elon Musk's X alias" },
+  { cmc: 35436, slug: "alon", cg: "alon", sym: "ALON", name: "Alon", who: "Alon Cohen (pump.fun co-founder)" },
+  { cmc: 35181, slug: "elon-trump-fart", cg: "elon-trump-fart", sym: "ETF500", name: "Elon Trump Fart", who: "Elon Musk & Donald Trump" },
+  { cmc: 31510, slug: "mother-iggy", cg: "mother-iggy", sym: "MOTHER", name: "Mother Iggy", who: "Iggy Azalea" },
+  { cmc: 35091, slug: "kekius-maximus-army", cg: "kekius-maximus-4", sym: "KM", name: "Kekius Maximus (army)", who: "Elon Musk alias" },
+  { cmc: 29558, slug: "super-trump-io", cg: "super-trump", sym: "STRUMP", name: "Super Trump Coin", who: "Donald Trump" },
 ];
 const nm = (b: string) => (b === "SPCX" ? "SpaceX" : (NAMES[b] ?? b).replace(/\s[^\x00-\x7F].*$/, ""));
-const fp = (x: number) => (!x ? "—" : "$" + (x >= 1000 ? x.toLocaleString("en-US", { maximumFractionDigits: 0 }) : x >= 1 ? x.toFixed(2) : x.toPrecision(3)));
+const fp = (x: number) => (!x ? "—" : "$" + (x >= 1000 ? x.toLocaleString("en-US", { maximumFractionDigits: 0 }) : x >= 1 ? x.toFixed(2) : (x < 1e-4 ? x.toExponential(2) : x.toPrecision(3))));
 
-function Row({ href, logo, sym, name, price, chg, soon }: { href?: string; logo: React.ReactNode; sym: string; name: string; price?: string; chg?: number; soon?: boolean }) {
+function Row({ href, ext, logo, sym, name, price, chg, soon }: { href?: string; ext?: boolean; logo: React.ReactNode; sym: string; name: string; price?: string; chg?: number; soon?: boolean }) {
   const inner = <>
     <span className="mkp-coin">{logo}</span>
     <span className="mkp-n"><b>{sym}</b><small>{name}</small></span>
     <span className="mkp-p">{soon ? <em className="mkp-soon">Coming soon</em> : <><b>{price ?? "—"}</b>{chg !== undefined && <small className={chg >= 0 ? "up" : "dn"}>{`${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%`}</small>}</>}</span>
   </>;
+  if (href && ext) return <a href={href} target="_blank" rel="noopener noreferrer" className="mkp-row">{inner}</a>;
   return href ? <Link href={href} className="mkp-row">{inner}</Link> : <div className="mkp-row off">{inner}</div>;
 }
 
 export default function MarketsPage() {
   const [ms, setMs] = useState<Market[]>([]);
   const [pat, setPat] = useState<number>(0);
+  const [hp, setHp] = useState<Record<string, { usd?: number; usd_24h_change?: number | null }>>({});
   const { usd } = useSeiUsd();
   useEffect(() => {
     let on = true;
     loadMarketsByType("MARGIN").then((r) => { if (!on) return; setMs(r.markets); enrichMarkets(r.markets, (u) => on && setMs((a) => a.map((x) => (x.id === u.id ? u : x)))); });
+    const hl = () => fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${HUMAN.map((h) => h.cg).join(",")}&vs_currencies=usd&include_24hr_change=true`).then((r) => r.json()).then((d) => on && d && !d.status && setHp(d)).catch(() => {});
+    hl(); const iv = setInterval(hl, 120000);
     readCurve().then((c) => on && setPat(Number(c.price) / 1e18)).catch(() => {});
-    return () => { on = false; };
+    return () => { on = false; clearInterval(iv); };
   }, []);
   const by = (b: string) => ms.find((m) => m.base === b);
   const img = (b: string) => { const s = logoOf(b); return s ? <img src={s} alt="" /> : <i>{b[0]}</i>; };
@@ -50,8 +63,8 @@ export default function MarketsPage() {
 
         <section className="mkp-g">
           <h2>Human</h2>
-          {HUMAN.map((h) => <Row key={h.name} logo={<img src={h.img} alt="" />} sym={h.name} name={h.sub} soon />)}
-          <p className="mkp-note">Illustrative categories and coin designs. No affiliation, endorsement, listing, or live trading is implied. Logos reference <a href="https://coinmarketcap.com/currencies/official-trump/" target="_blank" rel="noopener noreferrer">TRUMP</a>, <a href="https://coinmarketcap.com/currencies/melania-meme/" target="_blank" rel="noopener noreferrer">MELANIA</a> on CoinMarketCap and <a href="https://www.youtube.com/@MrBeast" target="_blank" rel="noopener noreferrer">MrBeast on YouTube</a>.</p>
+          {HUMAN.map((h) => { const q = hp[h.cg]; return <Row key={h.sym} href={`https://coinmarketcap.com/currencies/${h.slug}/`} ext logo={<img src={`/logos/human/cmc-${h.cmc}.png`} alt="" />} sym={h.sym} name={`${h.name} · ${h.who}`} price={q?.usd ? fp(q.usd) : undefined} chg={typeof q?.usd_24h_change === "number" ? q.usd_24h_change : undefined} />; })}
+          <p className="mkp-note">Illustrative categories and coin designs. No affiliation, endorsement, listing, or live trading is implied. Logos and links reference each coin on <a href="https://coinmarketcap.com/" target="_blank" rel="noopener noreferrer">CoinMarketCap</a>; prices from CoinGecko. Many of these coins are unofficial fan tokens; the people named are not involved unless stated.</p>
         </section>
 
         <section className="mkp-g">

@@ -366,3 +366,269 @@ a.mkp-row:hover{background:#fffaf2}
 .mkp .up{color:#1f9d6b}.mkp .dn{color:#ff0047}
 .mkp-soon{font-style:normal;font-size:12px;color:#888;border:1px solid #e0dccf;border-radius:12px;padding:3px 10px}
 .mkp-note{font-size:12px;color:#888;margin:8px 4px 10px}.mkp-note a{color:#888}
+.sn-theme{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:1px solid #ebe6da;background:transparent;color:#111;display:flex;align-items:center;justify-content:center;cursor:pointer}
+@media (max-width:760px){.sn-theme{margin-left:auto}.sn-burger{margin-left:4px}}
+.sn-float{position:fixed;top:10px;right:10px;z-index:60}
+/* ==== DARK THEME (generated) ==== */
+html[data-theme="dark"] .pd{background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .pd-brand{color:var(--pd-red)}
+html[data-theme="dark"] .pd-burn{color:var(--pd-red)}
+html[data-theme="dark"] .pd-wallet{background:#111;color:#fff}
+html[data-theme="dark"] .pd-demo{background:#111;color:#fff}
+html[data-theme="dark"] .pd-card,html[data-theme="dark"] .pd-mcard{background:linear-gradient(162deg,#2a2a2a,#000 70%);color:#fff}
+html[data-theme="dark"] .pd-card-h p{color:#a6adb7}
+html[data-theme="dark"] .pd-coin{color:#fff}
+html[data-theme="dark"] .pd-card-f small{color:#a6adb7}
+html[data-theme="dark"] .pd-stats{color:#ccc}
+html[data-theme="dark"] .pd-stats span{color:#fff}
+html[data-theme="dark"] .pd-info{background:#191c21}
+html[data-theme="dark"] .pd-info a{color:var(--pd-red)}
+html[data-theme="dark"] .pd-bal{color:#a6adb7}
+html[data-theme="dark"] .pd-buy{background:linear-gradient(90deg,#ff0047,#ff5c86);color:#fff}
+html[data-theme="dark"] .pd-sec{background:#191c21;color:#f3f5f7}
+html[data-theme="dark"] .pd-sec:disabled{color:#a6adb7}
+html[data-theme="dark"] .pd-foot{color:#a6adb7}
+html[data-theme="dark"] .pd-ov{background:rgba(0,0,0,.5)}
+html[data-theme="dark"] .pd-modal{background:#10151e}
+html[data-theme="dark"] .pd-mh.dark{color:#f3f5f7}
+html[data-theme="dark"] .pd-step{background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .pd-mbody em{color:#e3e6ea}
+html[data-theme="dark"] .pd-sel,html[data-theme="dark"] .pd-in{background:#191c21}
+html[data-theme="dark"] .pd-fine{color:#a6adb7}
+html[data-theme="dark"] .pd-chart{background:#10151e}
+html[data-theme="dark"] .pd-dl dt{color:#a6adb7}
+html[data-theme="dark"] .pd-toast{background:#111;color:#fff}
+html[data-theme="dark"] .pd-net{color:#a6adb7}
+html[data-theme="dark"] .pd-net a{color:var(--pd-red)}
+html[data-theme="dark"] .pd-err{color:#b00020;background:#2a1219}
+html[data-theme="dark"] .pd-toast a{color:#ff7aa0}
+html[data-theme="dark"] .pd-chip{color:#fff}
+html[data-theme="dark"] .pd-prog{background:rgba(255,255,255,.15)}
+html[data-theme="dark"] .pd-progl{color:#a6adb7}
+html[data-theme="dark"] .pd-warn{color:#b00020}
+html[data-theme="dark"] .pd-sec.on{background:#111;color:#fff}
+html[data-theme="dark"] .pd-panel{background:#191c21}
+html[data-theme="dark"] .pd-tabs{background:#10151e}
+html[data-theme="dark"] .pd-tabs button{color:#a6adb7}
+html[data-theme="dark"] .pd-tabs button.on{background:#111;color:#fff}
+html[data-theme="dark"] .pd-pbig small{color:#a6adb7}
+html[data-theme="dark"] .pd-panel .pd-chart{background:#10151e}
+html[data-theme="dark"] .pd-fills a{border-top:1px solid #30343b;color:#f3f5f7}
+html[data-theme="dark"] .pd-fills .b{color:#1a8f4c}
+html[data-theme="dark"] .pd-fills .s{color:var(--pd-red)}
+html[data-theme="dark"] .pd-sec.sm{background:#10151e}
+html[data-theme="dark"] .pd-foot a{color:var(--pd-red)}
+html[data-theme="dark"] .pv{color:#f3f5f7}
+html[data-theme="dark"] .pv .up{color:#1a8f4c}
+html[data-theme="dark"] .pv .dn{color:var(--pd-red)}
+html[data-theme="dark"] .pv-disc{background:#2a1219;color:#b00020}
+html[data-theme="dark"] .pv-card{background:#191c21}
+html[data-theme="dark"] .pv-mut{color:#a6adb7}
+html[data-theme="dark"] .pv-lab{color:#e3e6ea}
+html[data-theme="dark"] .pv-inp{background:#10151e}
+html[data-theme="dark"] .pv-inp input{color:#f3f5f7}
+html[data-theme="dark"] .pv-inp span{color:#a6adb7}
+html[data-theme="dark"] .pv-quick button{background:#10151e}
+html[data-theme="dark"] .pv-quick span{color:#a6adb7}
+html[data-theme="dark"] .pv-pick button{background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .pv-pos{background:#10151e}
+html[data-theme="dark"] .pv-pos small{color:#a6adb7}
+html[data-theme="dark"] .pv-pos small.up{color:#1a8f4c}
+html[data-theme="dark"] .pv-pos small.dn{color:var(--pd-red)}
+html[data-theme="dark"] .pv-wd{background:#111;color:#fff}
+html[data-theme="dark"] .pv-live{color:#a6adb7}
+html[data-theme="dark"] .pv-feed li{border-top:1px solid #30343b}
+html[data-theme="dark"] .pv-feed span{color:#a6adb7}
+html[data-theme="dark"] .pv-legend{color:#a6adb7}
+html[data-theme="dark"] .pv-tile{background:linear-gradient(162deg,#2a2a2a,#000 70%);color:#fff}
+html[data-theme="dark"] .pv-tile .pv-mut{color:#a6adb7}
+html[data-theme="dark"] .pv-tile .up{color:#4ade80}
+html[data-theme="dark"] .pv-tile .dn{color:#ff5c86}
+html[data-theme="dark"] .pv-st{color:#ccc}
+html[data-theme="dark"] .pv-net small{color:#a6adb7}
+html[data-theme="dark"] .pv-curve{background:#10151e}
+html[data-theme="dark"] .pv-kpi{color:#a6adb7}
+html[data-theme="dark"] .pv-kpi b{color:inherit}
+html[data-theme="dark"] .pv-tile .pv-kpi b{color:#fff}
+html[data-theme="dark"] .pv-sheet .pv-kpi b{color:#f3f5f7}
+html[data-theme="dark"] .pv-board th{color:#a6adb7}
+html[data-theme="dark"] .pv-board td{border-top:1px solid #30343b}
+html[data-theme="dark"] .pv-board tbody tr:hover{background:#10151e}
+html[data-theme="dark"] .pv-modal{background:rgba(0,0,0,.5)}
+html[data-theme="dark"] .pv-sheet{background:#10151e}
+html[data-theme="dark"] .pv-big small{color:#a6adb7}
+html[data-theme="dark"] .pv-row span{color:#a6adb7}
+html[data-theme="dark"] .pv-warn{color:#b00020}
+html[data-theme="dark"] .pv-x{background:#191c21}
+html[data-theme="dark"] .pv-get{background:#10151e}
+html[data-theme="dark"] .pv-get a,html[data-theme="dark"] .pv-quick a{color:var(--pd-red)}
+html[data-theme="dark"] .pv-ok{color:#1a8f4c;background:#e7f6ec}
+html[data-theme="dark"] .pv-ok a{color:#1a8f4c}
+html[data-theme="dark"] .pf{border-top:1px solid #30343b;background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .pf a{color:#f3f5f7}
+html[data-theme="dark"] .pf a:hover{color:#ff0047}
+html[data-theme="dark"] .pf a i{background:#191c21;color:#a6adb7}
+html[data-theme="dark"] .pf p{color:#a6adb7}
+html[data-theme="dark"] .cs-art{color:#fff}
+html[data-theme="dark"] .mk-c{background:#191c21;color:#f3f5f7}
+html[data-theme="dark"] .mk-c span{color:#a6adb7}
+html[data-theme="dark"] .mk-c em{color:#a6adb7}
+html[data-theme="dark"] .mk-c.live{background:linear-gradient(90deg,#ff0047,#ff5c86);color:#fff}
+html[data-theme="dark"] .mk-c.live span,html[data-theme="dark"] .mk-c.live em{color:#fff}
+html[data-theme="dark"] .ux-net{color:#a6adb7}
+html[data-theme="dark"] .ux-seg,html[data-theme="dark"] .ux-seg2,html[data-theme="dark"] .ux-seg3{background:#191c21}
+html[data-theme="dark"] .ux-seg button,html[data-theme="dark"] .ux-seg2 button,html[data-theme="dark"] .ux-seg3 button{color:#a6adb7}
+html[data-theme="dark"] .ux-seg button.on,html[data-theme="dark"] .ux-seg3 button.on{background:#111;color:#fff}
+html[data-theme="dark"] .ux-seg2 button.on.b{background:#00a86b;color:#fff}
+html[data-theme="dark"] .ux-seg2 button.on.s{background:#ff0047;color:#fff}
+html[data-theme="dark"] .ux-pill{background:#191c21;color:#a6adb7}
+html[data-theme="dark"] .ux-pill.ok{color:#00a86b}
+html[data-theme="dark"] .ux-card{background:#191c21}
+html[data-theme="dark"] .ux-dark{background:linear-gradient(162deg,#2a2a2a,#000 70%);color:#fff}
+html[data-theme="dark"] .ux-mk button{color:#f3f5f7}
+html[data-theme="dark"] .ux-mk button.on{background:#10151e}
+html[data-theme="dark"] .ux-mk span{color:#a6adb7}
+html[data-theme="dark"] .ux-ph small{color:#a6adb7}
+html[data-theme="dark"] .ux-inp{background:#10151e}
+html[data-theme="dark"] .ux-inp span{color:#a6adb7}
+html[data-theme="dark"] .ux-inp em{color:#a6adb7}
+html[data-theme="dark"] .ux-bh{color:#a6adb7}
+html[data-theme="dark"] .ux-lv.up i{background:#00a86b}
+html[data-theme="dark"] .ux-lv.dn i{background:#ff0047}
+html[data-theme="dark"] .ux .up{color:#00a86b}
+html[data-theme="dark"] .ux .dn{color:#ff0047}
+html[data-theme="dark"] .ux-mut{color:#a6adb7}
+html[data-theme="dark"] .ux-mut a{color:#ff0047}
+html[data-theme="dark"] .ux-row{border-bottom:1px solid #30343b}
+html[data-theme="dark"] .ux-dep select,html[data-theme="dark"] .ux-dep input{background:#10151e}
+html[data-theme="dark"] .ux-dep .pd-sec{background:#111;color:#fff}
+html[data-theme="dark"] .ux-link{color:#ff0047}
+html[data-theme="dark"] .lf-big small{color:#a6adb7}
+html[data-theme="dark"] .lf-inp{background:#191c21}
+html[data-theme="dark"] .lf-chips button{background:#191c21}
+html[data-theme="dark"] .lf-chips button.on{background:#111;color:#fff}
+html[data-theme="dark"] .lf-tbl{background:#191c21}
+html[data-theme="dark"] .lf-tbl div{border-bottom:1px solid #30343b}
+html[data-theme="dark"] .lf-tbl span:last-child{color:#a6adb7}
+html[data-theme="dark"] .dm-cd,html[data-theme="dark"] .dm-g{background:#191c21}
+html[data-theme="dark"] .dm-h small{color:#a6adb7}
+html[data-theme="dark"] .dm-h b{color:var(--pd-red)}
+html[data-theme="dark"] .dm-grid div{background:linear-gradient(162deg,#2a2a2a,#000 70%);color:#fff}
+html[data-theme="dark"] .dm-grid small{color:#a6adb7}
+html[data-theme="dark"] .dm-ended{color:var(--pd-red)}
+html[data-theme="dark"] .dm-bar{background:#30343b}
+html[data-theme="dark"] .dm-bar i{background:linear-gradient(90deg,#ff0047,#ff5c86)}
+html[data-theme="dark"] .dm-g small{color:#a6adb7}
+html[data-theme="dark"] a.dm-g{color:#f3f5f7}
+html[data-theme="dark"] .dm-g em{color:#a6adb7}
+html[data-theme="dark"] .dm-seg i.on,html[data-theme="dark"] .dm-leg i.on{background:linear-gradient(90deg,#ff0047,#ff5c86)}
+html[data-theme="dark"] .dm-seg i.op,html[data-theme="dark"] .dm-leg i.op{background:repeating-linear-gradient(45deg,#111 0 4px,#555 4px 8px)}
+html[data-theme="dark"] .dm-tick{background:#111}
+html[data-theme="dark"] .dm-note{color:#a6adb7}
+html[data-theme="dark"] .dm-tot{border-top:1px solid #30343b}
+html[data-theme="dark"] .dm-stages span{background:#30343b;color:#a6adb7}
+html[data-theme="dark"] .dm-stages span.ok{background:#111;color:#fff}
+html[data-theme="dark"] .dm-g a{color:var(--pd-red)}
+html[data-theme="dark"] .dm-hist summary{color:#a6adb7}
+html[data-theme="dark"] .dm-hist div{border-bottom:1px solid #30343b}
+html[data-theme="dark"] .dm-hist span{color:#a6adb7}
+html[data-theme="dark"] .dm-g.ad input{background:#10151e}
+html[data-theme="dark"] .kl-err{color:#ff0047}
+html[data-theme="dark"] .cb-steps{color:#a6adb7}
+html[data-theme="dark"] .cb-steps b{background:#191c21}
+html[data-theme="dark"] .cb-steps li.on{color:#f3f5f7}
+html[data-theme="dark"] .cb-steps li.on b{background:#ff0047;color:#fff}
+html[data-theme="dark"] .cb-steps li.ok b{background:#2ecc71;color:#fff}
+html[data-theme="dark"] .cb-jp{color:#7a4b00;background:#fff4dc}
+html[data-theme="dark"] .cb-tk{background:#191c21}
+html[data-theme="dark"] .cb-rcpt{background:#191c21}
+html[data-theme="dark"] .cb-rcpt b{color:#ff0047}
+html[data-theme="dark"] .cb-rcpt small,html[data-theme="dark"] .cb-rcpt span{color:#a6adb7}
+html[data-theme="dark"] .pd-tn{background:#2a1219;color:#b00020}
+html[data-theme="dark"] .pd-sei{color:#a6adb7}
+html[data-theme="dark"] .pd-jp{background:#111;color:#fff}
+html[data-theme="dark"] .pd-jp b{color:#ff5c86}
+html[data-theme="dark"] .pd-chk em{color:#b00020}
+html[data-theme="dark"] .br-row small{color:#a6adb7}
+html[data-theme="dark"] .ux-chart{background:#10151e;color:#f3f5f7;border:1px solid #30343b}
+html[data-theme="dark"] .ux-chart .ux-ph b{color:#f3f5f7}
+html[data-theme="dark"] .ux-tf button{border:1px solid #30343b;background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .ux-tf button.on{background:#ff0047;color:#fff}
+html[data-theme="dark"] .ux-auto{border:1px solid #30343b;background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .ux-auto.on{background:#ff0047;color:#fff}
+html[data-theme="dark"] .ux-search{border:1px solid #30343b;background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .ux-mkn small{color:#a6adb7}
+html[data-theme="dark"] .ux-logo{background:#10151e;border:1px solid #30343b}
+html[data-theme="dark"] .ux-logo-f{color:#fff;background:#999}
+html[data-theme="dark"] .ux-none{color:#ff0047}
+html[data-theme="dark"] .pt .up{color:var(--up)}
+html[data-theme="dark"] .pt .dn{color:var(--dn)}
+html[data-theme="dark"] .pt-mkt{color:#f3f5f7}
+html[data-theme="dark"] .pt-mkt small{color:var(--mut)}
+html[data-theme="dark"] .pt-px small{color:var(--mut)}
+html[data-theme="dark"] .pt-stats span{color:var(--mut)}
+html[data-theme="dark"] .pt-pick{background:#10151e}
+html[data-theme="dark"] .pt-plist button{border-bottom:1px solid #30343b;color:#f3f5f7}
+html[data-theme="dark"] .pt-plist button.on{background:#2a1219}
+html[data-theme="dark"] .pt-plist small{color:var(--mut)}
+html[data-theme="dark"] .pt-row2 select{background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .pt-tabs button{color:var(--mut)}
+html[data-theme="dark"] .pt-tabs button.on{color:#f3f5f7}
+html[data-theme="dark"] .pt-inp{background:#10151e}
+html[data-theme="dark"] .pt-inp span{color:var(--mut)}
+html[data-theme="dark"] .pt-stops button{color:var(--mut)}
+html[data-theme="dark"] .pt-stops button.on{color:var(--dn)}
+html[data-theme="dark"] .pt-kv dt{color:#a6adb7}
+html[data-theme="dark"] .pt-bs button{color:#fff}
+html[data-theme="dark"] .pt-buy{background:#3aa0ff}
+html[data-theme="dark"] .pt-sell{background:linear-gradient(90deg,#ff0047,#ff5c86)}
+html[data-theme="dark"] .pt-meter{background:#30343b}
+html[data-theme="dark"] .pt-ov p{color:#a6adb7}
+html[data-theme="dark"] .pt-bh{color:var(--mut)}
+html[data-theme="dark"] .pt-lv.dn span:first-child{color:var(--dn)}
+html[data-theme="dark"] .pt-lv.up span:first-child{color:var(--up)}
+html[data-theme="dark"] .pt-lv span{color:#f3f5f7}
+html[data-theme="dark"] .pt-mid small{color:var(--mut)}
+html[data-theme="dark"] .pt-th{color:var(--mut)}
+html[data-theme="dark"] .pt-td{color:#f3f5f7}
+html[data-theme="dark"] .pt-ticker button{color:#f3f5f7}
+html[data-theme="dark"] .pt-venue button{border:1px solid #30343b;background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .pt-venue button.on{background:#111;color:#fff}
+html[data-theme="dark"] .pt-modal{background:rgba(0,0,0,.35)}
+html[data-theme="dark"] .pt-modal>div{background:#10151e}
+html[data-theme="dark"] .pt-modal .pt-buy,html[data-theme="dark"] .pt-modal .pt-sell{color:#fff}
+html[data-theme="dark"] .pt-dep{background:#3aa0ff !important;color:#fff !important}
+html[data-theme="dark"] .pt-modal .ux-link{color:#a6adb7}
+html[data-theme="dark"] .sn{background:rgba(255,253,247,.96);border-bottom:1px solid #30343b}
+html[data-theme="dark"] .sn-brand{color:#f3f5f7}
+html[data-theme="dark"] .sn-brand i{color:#ff0047}
+html[data-theme="dark"] .sn-links a,html[data-theme="dark"] .sn-drop a{color:#e3e6ea}
+html[data-theme="dark"] .sn-links a.on,html[data-theme="dark"] .sn-drop a.on{color:#ff0047;background:#2a1219}
+html[data-theme="dark"] .sn-burger span{background:#111}
+html[data-theme="dark"] .sn-drop{border-top:1px solid #30343b}
+html[data-theme="dark"] .mkp-eye{color:#ff0047}
+html[data-theme="dark"] .mkp-g{background:#10151e;border:1px solid #30343b}
+html[data-theme="dark"] .mkp-row{border-top:1px solid #30343b;color:#f3f5f7}
+html[data-theme="dark"] a.mkp-row:hover{background:#191c21}
+html[data-theme="dark"] .mkp-coin{background:#10151e;border:2px solid #30343b}
+html[data-theme="dark"] .mkp-pat{background:#ff0047;color:#fff}
+html[data-theme="dark"] .mkp-n small{color:#a6adb7}
+html[data-theme="dark"] .mkp .up{color:#1f9d6b}
+html[data-theme="dark"] .mkp .dn{color:#ff0047}
+html[data-theme="dark"] .mkp-soon{color:#a6adb7;border:1px solid #30343b}
+html[data-theme="dark"] .mkp-note{color:#a6adb7}
+html[data-theme="dark"] .mkp-note a{color:#a6adb7}
+html[data-theme="dark"] .sn-theme{border:1px solid #30343b;color:#f3f5f7}
+html[data-theme="dark"]{color-scheme:dark;background:#080a0d}
+html[data-theme="dark"] body{background:#080a0d;color:#f3f5f7}
+html[data-theme="dark"] .pd{background:#080a0d;color:#f3f5f7}
+html[data-theme="dark"] .pt{--bd:#30343b;--bg2:#10151e;--mut:#a6adb7}
+html[data-theme="dark"] .sn{background:rgba(8,10,13,.94);border-bottom-color:#30343b}
+html[data-theme="dark"] .sn-burger span{background:#f3f5f7}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:#10151e;color:#f3f5f7;border-color:#30343b}
+html[data-theme="dark"] .pd-wallet{background:#f3f5f7;color:#080a0d}
+html[data-theme="dark"] .pt-venue button.on{background:#f3f5f7;color:#080a0d;border-color:#f3f5f7}
+html[data-theme="dark"] .pt-modal>div{background:#10151e;color:#f3f5f7}
+html[data-theme="dark"] .pf,html[data-theme="dark"] footer{background:#080a0d;color:#a6adb7;border-color:#30343b}
+html[data-theme="dark"] .ux-logo,html[data-theme="dark"] .mkp-coin{background:#fff}
+html[data-theme="dark"] .ux-cbox,html[data-theme="dark"] .ux-chart{background:#10151e}

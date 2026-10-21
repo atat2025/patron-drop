@@ -29,6 +29,14 @@ export default function LwChart({ candles, resetKey }: { candles: Candle[]; rese
     vs.current = c.addSeries(HistogramSeries, { color: "rgba(0,0,0,.12)", priceFormat: { type: "volume" }, priceScaleId: "", lastValueVisible: false, priceLineVisible: false });
     vs.current.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     chart.current = c;
+    const theme = () => {
+      const d = document.documentElement.getAttribute("data-theme") === "dark";
+      c.applyOptions({ layout: { background: { type: ColorType.Solid, color: d ? "#10151e" : "#fffdf7" }, textColor: d ? "#a6adb7" : "#333" },
+        grid: { vertLines: { color: d ? "#1c2230" : "#f0ece2" }, horzLines: { color: d ? "#1c2230" : "#f0ece2" } },
+        rightPriceScale: { borderColor: d ? "#30343b" : "#e6e2d8" }, timeScale: { borderColor: d ? "#30343b" : "#e6e2d8" } });
+    };
+    theme();
+    const mo = new MutationObserver(theme); mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     const ps = () => cs.current!.priceScale();
     // Track manual price-axis changes (axis drag / vertical drag) -> show "Auto" as off.
     const sync = () => setAuto(ps().options().autoScale);
@@ -62,7 +70,7 @@ export default function LwChart({ candles, resetKey }: { candles: Candle[]; rese
     box.addEventListener("touchmove", tm, { capture: true, passive: false });
     box.addEventListener("touchend", te, { capture: true });
     box.addEventListener("mouseup", te as unknown as EventListener);
-    return () => { box.removeEventListener("touchstart", ts, true); box.removeEventListener("touchmove", tm, true); box.removeEventListener("touchend", te, true); box.removeEventListener("mouseup", te as unknown as EventListener); c.remove(); chart.current = null; };
+    return () => { box.removeEventListener("touchstart", ts, true); box.removeEventListener("touchmove", tm, true); box.removeEventListener("touchend", te, true); box.removeEventListener("mouseup", te as unknown as EventListener); mo.disconnect(); c.remove(); chart.current = null; };
   }, []);
   useEffect(() => {
     if (!cs.current || !vs.current) return;
