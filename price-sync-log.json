@@ -1,0 +1,19 @@
+{
+ "entries": [
+  {
+   "t": "2026-10-21T19:24:38.791Z",
+   "action": "skip: prices in line",
+   "keeperSei": "5.473146",
+   "curvePrice": "0.185646",
+   "poolBid": "0.049850",
+   "poolAsk": "0.186951",
+   "best": {
+    "dir": "A",
+    "pat": "0.269329",
+    "spend": "0.050150",
+    "get": "0.049850",
+    "netProfit": "-0.025050"
+   }
+  }
+ ]
+}
