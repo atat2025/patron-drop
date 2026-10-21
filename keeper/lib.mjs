@@ -1,7 +1,7 @@
 import { createPublicClient, http, parseAbi, parseAbiItem, formatEther } from "viem";
 import { CHAIN_ID, RPC, MARKET, MARKET_FROM } from "./config.mjs";
 
-export const chain = { id: CHAIN_ID, name: "Sei Testnet", nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: { default: { http: [RPC] } } };
+export const chain = { id: CHAIN_ID, name: CHAIN_ID === 1329 ? "Sei" : "Sei Testnet", nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: { default: { http: [RPC] } } };
 export const pub = createPublicClient({ chain, transport: http(RPC, { retryCount: 4, retryDelay: 800 }) });
 export async function assertTestnet() {
   const id = await pub.getChainId();

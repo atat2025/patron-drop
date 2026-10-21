@@ -64,8 +64,8 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
       <div className="pd-card-f cb-n"><div><b>{n} PATRON</b><small>you receive</small></div>
         <div className="pd-step"><button onClick={() => setN(Math.max(1, n - 1))}>-</button><span>{n}</span><button onClick={() => setN(Math.min(max, n + 1))}>+</button></div></div>
       <dl className="pd-dl">
-        <dt>PATRON (curve price)</dt><dd>{curveSei == null ? "…" : `${f4(curveSei)} SEI ≈ ${usd(curveSei * CARD.seiUsd)}`}</dd>
-        <dt>Network fee buffer</dt><dd>{f4(CARD.gasBufferSei)} SEI ≈ {usd(CARD.gasBufferSei * CARD.seiUsd)}</dd>
+        <dt>PATRON price</dt><dd>{curveSei == null ? "…" : `${f4(curveSei)} SEI ≈ ${usd(curveSei * CARD.seiUsd)}`}</dd>
+        <dt>Small network cost</dt><dd>{f4(CARD.gasBufferSei)} SEI ≈ {usd(CARD.gasBufferSei * CARD.seiUsd)}</dd>
         <dt>Payment fee (Transak, est. {CARD.feePct}% + {usd(CARD.feeFixedUsd)})</dt><dd>{fee == null ? "…" : usd(fee)}</dd>
         {extra > 0.005 && <><dt>Extra SEI to reach the {usd(CARD.minUsd)} minimum (stays in your wallet)</dt><dd>{usd(extra)}</dd></>}
         <dt><b>Total (estimate)</b></dt><dd><b>{total == null ? "…" : usd(total)}</b></dd>
@@ -85,14 +85,14 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
     </>}
 
     {(step === "confirm" || step === "buying") && <>
-      <em>Final step: buy <b>{n} PATRON</b> from the curve with the SEI you received (max <b>{curveSei == null ? "" : f4(curveSei)}</b> SEI).</em>
-      <small className="pd-fine">SEI arrived, so we opened the wallet confirmation (PATRON curve purchase). If you closed it, reopen it with the button below.</small>
+      <em>Final step: buy <b>{n} PATRON</b> with the SEI you received (max <b>{curveSei == null ? "" : f4(curveSei)}</b> SEI).</em>
+      <small className="pd-fine">Your SEI arrived, so we opened your wallet to finish buying PATRON. If you closed it, tap the button below.</small>
       <button className="pd-buy" disabled={step === "buying"} onClick={buy}>{step === "buying" ? "Confirm in wallet…" : `Approve and receive ${n} PATRON`}</button>
     </>}
 
     {step === "done" && rcpt && <>
       <div className="cb-rcpt"><small>Receipt</small><b>{rcpt.got} PATRON</b><span>received</span></div>
-      <dl className="pd-dl"><dt>Item</dt><dd>$PATRON (Edition 0)</dd><dt>SEI paid (curve)</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>Card payment</dt><dd>via Transak (receipt by email)</dd><dt>Wallet</dt><dd><a onClick={() => chain.watchPatron()}>Show PATRON in wallet ↗</a></dd><dt>Transaction</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">View on explorer ↗</a></dd></dl>
+      <dl className="pd-dl"><dt>Item</dt><dd>$PATRON (Edition 0)</dd><dt>SEI paid</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>Card payment</dt><dd>via Transak (receipt by email)</dd><dt>Wallet</dt><dd><a onClick={() => chain.watchPatron()}>Show PATRON in wallet ↗</a></dd><dt>Transaction</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">View on explorer ↗</a></dd></dl>
     </>}
     {err && <div className="pd-err">{err}</div>}
   </div>;

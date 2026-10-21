@@ -112,7 +112,7 @@ export default function PatronDrop() {
         </section>
         <Countdown />
         <LiquidityGauge />
-        <div className="pd-info">Buy and sell a limited mustache token. Redeem it for a PATRON reward. <a onClick={() => setMode("stats")}>Learn more</a>
+        <div className="pd-info">Buy and sell a limited mustache token. Swap it for a PATRON reward. <a onClick={() => setMode("stats")}>Learn more</a>
           {addr && <div className="pd-bal">You hold <b>{st.held}</b> $PATRON</div>}
           {LIVE && <div className="pd-net">{NET.chainName} · {NET.chainId} · <a href={chain.explorerAddr(chain.MARKET)} target="_blank" rel="noreferrer">contract</a> · <a onClick={() => chain.addSeiTestnet().catch((e) => flash((e as Error).message))}>Add {isTestnet ? "Sei testnet" : "Sei"}</a>{NET.faucet && <> · <a href={NET.faucet} target="_blank" rel="noreferrer">faucet</a></>}</div>}
           {chainErr && <div className="pd-err">{chainErr}</div>}
@@ -128,7 +128,7 @@ export default function PatronDrop() {
         <StakeSection held={st.held} />
         {!embed && <a className="pd-sec pd-link" href="vault/">PATRON Vault: automated strategies ({isTestnet ? "testnet" : "mainnet"}) →</a>}
         {!embed && EXT && <p className="pd-foot"><a href={EXT} target="_blank" rel="noreferrer">patron.red →</a></p>}
-        <p className="pd-foot">{LIVE ? (isTestnet ? "TESTNET: transactions use Sei testnet SEI (no real value). Shipping details are never put on-chain." : "Shipping details are never put on-chain.") : "Demo mode: no real payments, tokens or shipping. State is stored only in this browser."}</p>
+        <p className="pd-foot">{LIVE ? (isTestnet ? "Practice mode: play money, no real value. Shipping details are never made public." : "Shipping details are never made public.") : "Demo mode: no real payments, tokens or shipping. State is stored only in this browser."}</p>
       </main>
 
       {mode && <div className="pd-ov" onClick={() => setMode(null)}>
@@ -141,7 +141,7 @@ export default function PatronDrop() {
           {mode === "stats" && <Stats st={st} />}
         </div>
       </div>}
-      {toast && <div className="pd-toast">{toast}{txLink && <> · <a href={txLink} target="_blank" rel="noreferrer">view tx</a></>}</div>}
+      {toast && <div className="pd-toast">{toast}{txLink && <> · <a href={txLink} target="_blank" rel="noreferrer">see receipt</a></>}</div>}
     </div>
   );
 }
@@ -198,19 +198,19 @@ function Redeem({ st, onDone, close }: { st: St; onDone: (n: number) => Promise<
     <div className="pd-mcard">
       <div className="pd-mh">Redeem <span className={`pd-demo ${LIVE ? "live" : ""}`}>{TAG}</span></div>
       <Art small />
-      <div className="pd-card-f"><div><b>{step === "done" ? "Redeemed" : `Burn ${n} $PATRON`}</b><small>You hold {st.held}</small></div>{step === "burn" && <Stepper n={n} set={setN} max={Math.max(1, st.held)} />}</div>
+      <div className="pd-card-f"><div><b>{step === "done" ? "Redeemed" : `Use ${n} $PATRON`}</b><small>You hold {st.held}</small></div>{step === "burn" && <Stepper n={n} set={setN} max={Math.max(1, st.held)} />}</div>
     </div>
     <div className="pd-mbody">
-      {step === "burn" && <><em>Redeem one token for one PATRON reward pack (merch + members experience). Burning is permanent.</em>
+      {step === "burn" && <><em>Swap one token for one PATRON reward pack (merch + members experience). The token is used up and cannot come back.</em>
         <button className="pd-buy" onClick={() => setStep("form")}>Redeem {n} ({TAG.toLowerCase()})</button></>}
       {step === "form" && <>
         <em>Where should we send it?</em>
         {([["name", "Full name"], ["email", "Email"], ["line1", "Street address"], ["city", "City"], ["zip", "Postal code"], ["country", "Country"]] as const).map(([k, l]) =>
           <input key={k} className="pd-in" placeholder={l} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />)}
-        <small className="pd-fine">{LIVE ? "Only the burn goes on-chain (Redeemed event). Shipping details stay in this page — nothing is sent anywhere in this testnet build." : "Demo only — nothing is sent or stored outside this page."}</small>
-        <button className="pd-buy" disabled={!ok || busy} onClick={async () => { setBusy(true); setErr(null); try { await onDone(n); setStep("done"); } catch (e) { setErr((e as Error).message.split("\n")[0]); } setBusy(false); }}>{busy ? "Confirm in wallet…" : `Burn & claim (${TAG.toLowerCase()})`}</button>
+        <small className="pd-fine">{LIVE ? "Your shipping details stay on this page and are never made public." : "Demo only — nothing is sent or stored outside this page."}</small>
+        <button className="pd-buy" disabled={!ok || busy} onClick={async () => { setBusy(true); setErr(null); try { await onDone(n); setStep("done"); } catch (e) { setErr((e as Error).message.split("\n")[0]); } setBusy(false); }}>{busy ? "Confirm in wallet…" : `Swap for reward`}</button>
         {err && <div className="pd-err">{err}</div>}</>}
-      {step === "done" && <><em>Thanks, {f.name.split(" ")[0]}! In a live drop your reward would ship to {f.city}, {f.country}. ({LIVE ? "Testnet: burn confirmed on-chain; no shipping data was sent." : "Demo: no data was sent."})</em>
+      {step === "done" && <><em>Thanks, {f.name.split(" ")[0]}! In a live drop your reward would ship to {f.city}, {f.country}. ({LIVE ? "Done. No shipping details were sent." : "Demo: no data was sent."})</em>
         <button className="pd-buy" onClick={close}>Done</button></>}
     </div>
   </>;
@@ -229,11 +229,11 @@ function Stats({ st }: { st: St }) {
       <line x1={x(sold)} x2={x(sold)} y1="0" y2={H} stroke="#999" strokeDasharray="3 3" />
       <circle cx={x(sold)} cy={y(buyCost(st.pool, 1))} r="5" fill="var(--pd-red)" />
     </svg>
-    <small className="pd-fine">Price (log scale) vs. tokens sold. Constant-product curve x·y=k: each purchase raises the price of the next; selling lowers it.</small>
+    <small className="pd-fine">Each time someone buys, the price goes up a little. Each time someone sells, it goes down.</small>
     <dl className="pd-dl">
       <dt>Current price</dt><dd>{fmt(buyCost(st.pool, 1))}</dd>
-      <dt>Sold / supply</dt><dd>{sold} / {SUPPLY}</dd>
-      <dt>Redeemed (burned)</dt><dd>{st.redeemed}</dd>
+      <dt>Sold so far</dt><dd>{sold} / {SUPPLY}</dd>
+      <dt>Swapped for rewards</dt><dd>{st.redeemed}</dd>
       <dt>Next 10 cost</dt><dd>{fmt(buyCost(st.pool, 10))}</dd>
     </dl>
   </div>;
@@ -256,7 +256,7 @@ function PriceSection({ st }: { st: St }) {
   return (
     <section className="pd-panel">
       <div className="pd-ph"><b>Price</b>
-        <div className="pd-tabs"><button className={view === "history" ? "on" : ""} onClick={() => setView("history")}>History</button><button className={view === "curve" ? "on" : ""} onClick={() => setView("curve")}>Curve</button></div></div>
+        <div className="pd-tabs"><button className={view === "history" ? "on" : ""} onClick={() => setView("history")}>History</button><button className={view === "curve" ? "on" : ""} onClick={() => setView("curve")}>Future</button></div></div>
       <div className="pd-pbig"><Px v={now} />{LIVE ? "" : " USD"}<small> next token</small></div>
       <svg viewBox={`0 0 ${W} ${H}`} className="pd-chart">
         <path d={d + ` L${W},${H} L0,${H}Z`} fill="var(--pd-red)" opacity=".08" />
@@ -265,7 +265,7 @@ function PriceSection({ st }: { st: St }) {
         <circle cx={X(mark)} cy={Y(useHist ? now : buyCost(st.pool, 1))} r="5" fill="var(--pd-red)"><title>{"Now " + fmt(now)}</title></circle>
         {LIVE && LOADED && <><text x="2" y="10" fontSize="9" fill="#888">{fmtUsd(mx * seiUsd())}</text><text x="2" y={H - 2} fontSize="9" fill="#888">{fmtUsd(mn * seiUsd())}</text></>}
       </svg>
-      <small className="pd-fine">{useHist ? `${fills!.length} on-chain trade${fills!.length === 1 ? "" : "s"} (Bought/Sold events on ${NET.chainName})` : fills === null ? "Loading on-chain trades…" : view === "history" ? "No trades yet, showing the curve. Dot = now." : "Price vs. tokens sold (x·y=k). Dot = now."}</small>
+      <small className="pd-fine">{useHist ? `${fills!.length} buy${fills!.length === 1 ? "" : "s"} and sell${fills!.length === 1 ? "" : "s"} so far` : fills === null ? "Loading…" : view === "history" ? "Nobody has bought yet. Dot = now." : "Price vs. tokens sold (x·y=k). Dot = now."}</small>
       {!!fills?.length && <div className="pd-fills">{fills.slice(-4).reverse().map((f) => (
         <a key={f.tx} href={chain.explorerTx(f.tx)} target="_blank" rel="noreferrer"><span className={f.side === "BUY" ? "b" : "s"}>{f.side === "BUY" ? "Buy" : "Sell"} {f.amount}</span><span>{fmt(f.price)} each ↗</span></a>))}</div>}
     </section>
@@ -284,7 +284,7 @@ function StakeSection({ held }: { held: number }) {
     <section className="pd-panel">
       <div className="pd-ph"><b>Stake $PATRON</b><span className="pd-demo">DEMO</span></div>
       <dl className="pd-dl">
-        <dt>APR</dt><dd>{APR}%</dd>
+        <dt>Yearly reward</dt><dd>{APR}%</dd>
         <dt>Staked</dt><dd>{staked}</dd>
         <dt>Rewards</dt><dd>{reward.toFixed(6)}</dd>
       </dl>

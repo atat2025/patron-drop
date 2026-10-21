@@ -36,7 +36,7 @@ const NETS: Record<NetName, NetConfig> = {
       { id: "meanrev", address: "0xa2273EbB4B594fEE90e0A0172e2dA3Ad73b6a974" },
       { id: "dca", address: "0xe692187a6b015f56Fc44F05530Afb5d6964124E0" },
     ].filter((v) => v.address),
-    dataUrl: "", // e.g. https://raw.githubusercontent.com/atat2025/patron-drop/data-mainnet (keeper output)
+    dataUrl: "https://raw.githubusercontent.com/atat2025/patron-drop/data-mainnet", // keeper output (box keeper loop)
   },
 };
 

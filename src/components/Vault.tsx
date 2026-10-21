@@ -13,7 +13,7 @@ const f4 = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 }
 const sei = (v: bigint) => usdSei(Number(formatEther(v)));
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 const ago = (t: number) => { const s = Math.max(0, Math.floor(Date.now() / 1000 - t)); return s < 3600 ? `${Math.max(1, Math.floor(s / 60))}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`; };
-const KIND = ["checkpoint", "Buy", "Sell", "Deposit", "Withdraw"];
+const KIND = ["Check", "Buy", "Sell", "Money in", "Money out"];
 const LABEL = NET.label;
 
 function stats(v: S.VaultView) {
@@ -46,13 +46,13 @@ export function Vault() {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<{ t: string; h?: string; err?: boolean } | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
-  const refresh = async (u = user) => { try { setVs(await S.readAll(u)); setErr(null); } catch (e) { setErr("Could not load vaults: " + (e as Error).message.split("\n")[0]); } };
+  const refresh = async (u = user) => { try { setVs(await S.readAll(u)); setErr(null); } catch (e) { setErr("Could not load: " + (e as Error).message.split("\n")[0]); } };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { refresh(); const t = setInterval(() => refresh(), 10000); return () => clearInterval(t); }, [user]);
   useEffect(() => { S.readKeeperLog().then(setLog); const t = setInterval(() => S.readKeeperLog().then(setLog), 60000); return () => clearInterval(t); }, []);
   const run = async (label: string, f: () => Promise<string>) => {
     setBusy(label); setNote(null);
-    try { const h = await f(); setNote({ t: `${label}: confirmed`, h }); await refresh(); }
+    try { const h = await f(); setNote({ t: `${label}: done`, h }); await refresh(); }
     catch (e) { setNote({ t: (e as Error).message.split("\n")[0], err: true }); }
     setBusy(null);
   };
@@ -73,19 +73,19 @@ export function Vault() {
   const lastRun = log.length ? log[log.length - 1].t : null;
   const d = detail ? rows.find((r) => r.v.id === detail) : null;
 
-  if (!NET.vaults.length) return <section id="vault" className="pv"><div className="pv-disc">Vault is not deployed on this network yet.</div></section>;
+  if (!NET.vaults.length) return <section id="vault" className="pv"><div className="pv-disc">Not ready yet.</div></section>;
   return (
     <section id="vault" className="pv">
-      <div className="pv-disc">{LABEL} · {isTestnet ? "Test network, no real value. " : ""}Strategies trade for real on-chain (Sei {isTestnet ? "testnet" : "mainnet"}). Every number is read from the vault contracts. Not investment advice. Contracts are not audited.</div>
+      <div className="pv-disc">{isTestnet ? "Practice mode: play money, no real value. " : ""}Your money is traded automatically for you. It can go up or down, and you could lose some or all of it. Not financial advice.</div>
       {err && <div className="pd-err">{err}</div>}
 
       <div className="pv-grid2">
         <div className="pv-card">
-          <div className="pv-h"><h3>Deposit SEI</h3><span className="pd-demo live">{NET.label}</span></div>
-          <label className="pv-lab">Amount</label>
+          <div className="pv-h"><h3>Put money in</h3><span className="pd-demo live">{NET.label}</span></div>
+          <label className="pv-lab">How much</label>
           <div className="pv-inp"><input inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.]/g, ""))} /><span>SEI</span></div>
-          <div className="pv-quick">{["0.02", "0.05", "0.1"].map((v) => <button key={v} onClick={() => setAmt(v)}>{v}</button>)}<span>{NET.faucet && <a href={NET.faucet} target="_blank" rel="noreferrer">Get test SEI ↗</a>}</span></div>
-          <label className="pv-lab">Strategy</label>
+          <div className="pv-quick">{["0.02", "0.05", "0.1"].map((v) => <button key={v} onClick={() => setAmt(v)}>{v}</button>)}<span>{NET.faucet && <a href={NET.faucet} target="_blank" rel="noreferrer">Get free practice SEI ↗</a>}</span></div>
+          <label className="pv-lab">Pick a style</label>
           <div className="pv-pick">
             {rows.map(({ v, m, s }) => (
               <button key={v.id} className={sid === v.id ? "on" : ""} onClick={() => setSid(v.id)}><Dot on={!v.paused} /><b>{m.name}</b><em className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</em></button>
@@ -93,42 +93,42 @@ export function Vault() {
             {!vs && <p className="pv-mut">Loading…</p>}
           </div>
           {!user ? <button className="pd-buy" onClick={doConnect}>Connect wallet</button>
-            : <button className="pd-buy" disabled={wei < 1000000000000000n || !!busy} onClick={() => setConfirm(true)}>{wei < 1000000000000000n ? "Min 0.001 SEI" : "Review deposit"}</button>}
-          {note && <div className={note.err ? "pd-err" : "pv-ok"}>{note.t}{note.h && <> · <a href={explorerTx(note.h)} target="_blank" rel="noreferrer">view tx ↗</a></>}</div>}
+            : <button className="pd-buy" disabled={wei < 1000000000000000n || !!busy} onClick={() => setConfirm(true)}>{wei < 1000000000000000n ? "At least 0.001 SEI" : "Next"}</button>}
+          {note && <div className={note.err ? "pd-err" : "pv-ok"}>{note.t}{note.h && <> · <a href={explorerTx(note.h)} target="_blank" rel="noreferrer">see receipt ↗</a></>}</div>}
         </div>
 
         <div className="pv-card">
-          <div className="pv-h"><h3>Your deposits</h3><span className="pv-mut">on-chain · TVL {sei(tvl)}</span></div>
-          {pos.length === 0 && <p className="pv-mut">{user ? "No deposits yet." : "Connect your wallet to see deposits."}</p>}
+          <div className="pv-h"><h3>Your money</h3><span className="pv-mut">Everyone together: {sei(tvl)}</span></div>
+          {pos.length === 0 && <p className="pv-mut">{user ? "You have not put money in yet." : "Connect your wallet to see your money."}</p>}
           {pos.map(({ v, m }) => (
             <div key={v.id} className="pv-pos">
-              <div><b>{m.name}</b><small><Dot on={!v.paused} />{v.tok} PATRON + {sei(v.sei)} in vault</small></div>
-              <div className="r"><b>{sei(v.mineValue)}</b><small>current value (if sold now)</small></div>
-              <button className="pv-wd" disabled={!!busy} onClick={() => run("Withdraw", () => S.withdraw(v.address, v.mine))}>{busy === "Withdraw" ? "…" : "Withdraw all"}</button>
+              <div><b>{m.name}</b><small><Dot on={!v.paused} />{v.tok} PATRON + {sei(v.sei)}</small></div>
+              <div className="r"><b>{sei(v.mineValue)}</b><small>worth now</small></div>
+              <button className="pv-wd" disabled={!!busy} onClick={() => run("Take money out", () => S.withdraw(v.address, v.mine))}>{busy === "Take money out" ? "…" : "Take money out"}</button>
             </div>))}
-          <div className="pv-h" style={{ marginTop: 14 }}><h3>Live activity</h3><span className="pv-live"><Dot on />{lastRun ? `keeper ${ago(Date.parse(lastRun) / 1000)} ago` : "on-chain"}</span></div>
+          <div className="pv-h" style={{ marginTop: 14 }}><h3>What it just did</h3><span className="pv-live"><Dot on />{lastRun ? `last check ${ago(Date.parse(lastRun) / 1000)} ago` : "live"}</span></div>
           <ul className="pv-feed">{feed.map((f) => <li key={f.k} title={f.why}><b>{f.name}</b> {f.txt}{f.tx && <> · <a href={explorerTx(f.tx)} target="_blank" rel="noreferrer">tx ↗</a></>}<span>{f.ago}</span></li>)}
-            {!feed.length && <li>No trades yet.</li>}</ul>
+            {!feed.length && <li>Nothing bought or sold yet.</li>}</ul>
         </div>
       </div>
 
-      <div className="pv-h" style={{ marginTop: 26 }}><h2 className="pv-h2">Auto strategies</h2></div>
-      <div className="pv-legend"><span><Dot on />Live (keeper trades on a schedule)</span><span>Charts show NAV per share</span></div>
+      <div className="pv-h" style={{ marginTop: 26 }}><h2 className="pv-h2">The styles</h2></div>
+      <div className="pv-legend"><span><Dot on />On (checks every few hours)</span><span>Lines show how it did</span></div>
       <div className="pv-tiles">
         {rows.map(({ v, m, s }) => (
           <button key={v.id} className="pv-tile" onClick={() => setDetail(v.id)}>
-            <div className="pv-h"><b>{m.name}</b><span className="pv-st"><Dot on={!v.paused} />{v.paused ? "Paused" : "Live"}</span></div>
-            <small className="pv-mut">{m.agent} · PATRON/SEI</small>
-            <div className={"pv-net " + (s.ret >= 0 ? "up" : "dn")}>{pct(s.ret)}<small>NAV/SHARE</small></div>
+            <div className="pv-h"><b>{m.name}</b><span className="pv-st"><Dot on={!v.paused} />{v.paused ? "Stopped" : "On"}</span></div>
+            <small className="pv-mut">{m.agent}</small>
+            <div className={"pv-net " + (s.ret >= 0 ? "up" : "dn")}>{pct(s.ret)}<small>HOW IT DID</small></div>
             <Spark d={s.series} />
-            <div className="pv-kpi"><span>NAV<b>{sei(v.nav)}</b></span><span>Max DD<b>{s.dd.toFixed(2)}%</b></span><span>Trades<b>{s.trades}</b></span></div>
+            <div className="pv-kpi"><span>Money in it<b>{sei(v.nav)}</b></span><span>Worst drop<b>{s.dd.toFixed(2)}%</b></span><span>Buys/sells<b>{s.trades}</b></span></div>
           </button>
         ))}
       </div>
 
       <div className="pv-card" style={{ marginTop: 20 }}>
-        <div className="pv-h"><h3>Leaderboard</h3><span className="pv-mut">by NAV/share return · on-chain</span></div>
-        <table className="pv-board"><thead><tr><th>#</th><th>Strategy</th><th>NAV</th><th>Return</th><th>DD</th><th>Trades</th></tr></thead><tbody>
+        <div className="pv-h"><h3>Who did best</h3><span className="pv-mut">best first</span></div>
+        <table className="pv-board"><thead><tr><th>#</th><th>Style</th><th>Money in it</th><th>How it did</th><th>Worst drop</th><th>Buys/sells</th></tr></thead><tbody>
           {board.map(({ v, m, s }, i) => <tr key={v.id} onClick={() => setDetail(v.id)}><td>{i + 1}</td><td><b>{m.name}</b></td><td>{sei(v.nav)}</td><td className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</td><td>{s.dd.toFixed(2)}%</td><td>{s.trades}</td></tr>)}
         </tbody></table>
       </div>
@@ -136,15 +136,15 @@ export function Vault() {
       {confirm && chosen && (
         <div className="pv-modal" onClick={() => setConfirm(false)}>
           <div className="pv-card pv-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="pv-h"><h3>Confirm deposit</h3><span className="pd-demo live">{NET.label}</span></div>
+            <div className="pv-h"><h3>Check and put in</h3><span className="pd-demo live">{NET.label}</span></div>
             <div className="pv-big">{usdSei(Number(amt) || 0).split(" (")[0]} <small>({amt} SEI)</small></div>
-            <div className="pv-row"><span>Strategy</span><b>{chosen.m.name}</b></div>
-            <div className="pv-row"><span>Rule</span><b style={{ textAlign: "right", maxWidth: 220 }}>{chosen.m.rule}</b></div>
-            <div className="pv-row"><span>Max drawdown</span><b>{chosen.s.dd.toFixed(2)}%</b></div>
+            <div className="pv-row"><span>Style</span><b>{chosen.m.name}</b></div>
+            <div className="pv-row"><span>How it works</span><b style={{ textAlign: "right", maxWidth: 220 }}>{chosen.m.rule}</b></div>
+            <div className="pv-row"><span>Worst drop so far</span><b>{chosen.s.dd.toFixed(2)}%</b></div>
             <ResidencyCheck />
-            <p className="pv-warn">{LABEL}. The keeper can only buy or sell PATRON on the whitelisted market and can never withdraw your funds. Only you can withdraw, at any time. Not investment advice.</p>
+            <p className="pv-warn">The robot can only buy and sell PATRON for you. It can never take your money. Only you can take your money out, any time. Not financial advice.</p>
             <div className="pv-btns"><button className="pd-sec" onClick={() => setConfirm(false)}>Cancel</button>
-              <button className="pd-buy" disabled={!!busy || !resOk} onClick={async () => { if (!resOk) return; setConfirm(false); await run("Deposit", () => S.deposit(chosen.v.address, wei)); }} >Deposit</button></div>
+              <button className="pd-buy" disabled={!!busy || !resOk} onClick={async () => { if (!resOk) return; setConfirm(false); await run("Put money in", () => S.deposit(chosen.v.address, wei)); }} >Put money in</button></div>
           </div>
         </div>
       )}
@@ -153,13 +153,13 @@ export function Vault() {
           <div className="pv-card pv-sheet wide" onClick={(e) => e.stopPropagation()}>
             <div className="pv-h"><h3>{d.m.name}</h3><button className="pv-x" onClick={() => setDetail(null)}>×</button></div>
             <small className="pv-mut"><Dot on={!d.v.paused} />{d.m.agent} · {d.m.rule}</small>
-            <div className={"pv-net big " + (d.s.ret >= 0 ? "up" : "dn")}>{pct(d.s.ret)}<small>NAV/SHARE</small></div>
+            <div className={"pv-net big " + (d.s.ret >= 0 ? "up" : "dn")}>{pct(d.s.ret)}<small>HOW IT DID</small></div>
             <div className="pv-curve"><Spark d={d.s.series} w={400} h={140} big /></div>
-            <div className="pv-kpi"><span>NAV<b>{sei(d.v.nav)}</b></span><span>Holdings<b>{d.v.tok} PATRON + {sei(d.v.sei)}</b></span><span>Trades<b>{d.s.trades}</b></span></div>
-            <h4 className="pv-lab">History (on-chain)</h4>
-            <table className="pv-board"><tbody>{[...d.v.recs].reverse().slice(0, 12).map((r, i) => <tr key={i}><td>{new Date(r.time * 1000).toLocaleString("en-US", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[r.kind]}</td><td>{r.kind === 1 || r.kind === 2 ? `${r.amount} PATRON` : ""}</td><td>{r.seiGwei ? usdSei(Number(r.seiGwei) / 1e9) : ""}</td><td>NAV {usdSei(Number(r.navGwei) / 1e9)}</td></tr>)}</tbody></table>
-            <small className="pv-mut">Vault <a href={explorerAddr(d.v.address)} target="_blank" rel="noreferrer">{d.v.address.slice(0, 10)}… ↗</a> · keeper <a href={explorerAddr(d.v.keeper)} target="_blank" rel="noreferrer">{d.v.keeper.slice(0, 10)}… ↗</a></small>
-            <button className="pd-buy" onClick={() => { setSid(d.v.id); setDetail(null); document.getElementById("vault")?.scrollIntoView({ behavior: "smooth" }); }} disabled={d.v.paused}>{d.v.paused ? "Paused" : "Deposit into this strategy"}</button>
+            <div className="pv-kpi"><span>Money in it<b>{sei(d.v.nav)}</b></span><span>Holding now<b>{d.v.tok} PATRON + {sei(d.v.sei)}</b></span><span>Buys/sells<b>{d.s.trades}</b></span></div>
+            <h4 className="pv-lab">What it did</h4>
+            <table className="pv-board"><tbody>{[...d.v.recs].reverse().slice(0, 12).map((r, i) => <tr key={i}><td>{new Date(r.time * 1000).toLocaleString("en-US", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[r.kind]}</td><td>{r.kind === 1 || r.kind === 2 ? `${r.amount} PATRON` : ""}</td><td>{r.seiGwei ? usdSei(Number(r.seiGwei) / 1e9) : ""}</td><td>Total {usdSei(Number(r.navGwei) / 1e9)}</td></tr>)}</tbody></table>
+            <small className="pv-mut">Contract <a href={explorerAddr(d.v.address)} target="_blank" rel="noreferrer">{d.v.address.slice(0, 10)}… ↗</a> · robot <a href={explorerAddr(d.v.keeper)} target="_blank" rel="noreferrer">{d.v.keeper.slice(0, 10)}… ↗</a></small>
+            <button className="pd-buy" onClick={() => { setSid(d.v.id); setDetail(null); document.getElementById("vault")?.scrollIntoView({ behavior: "smooth" }); }} disabled={d.v.paused}>{d.v.paused ? "Stopped" : "Put money in this style"}</button>
           </div>
         </div>
       )}
@@ -176,14 +176,14 @@ export default function VaultPage({ home = "", drop = "../" }: { home?: string; 
         <div className="pd-actions"><span className="pd-demo live">{NET.label}</span><a className="pd-wallet" href={drop}>PATRON Edition 0</a></div>
       </header>
       <main className="pv-main">
-        {isTestnet && <div className="pd-tn" role="note"><b>TESTNET</b> Test network. Tokens have no real value.</div>}
+        {isTestnet && <div className="pd-tn" role="note"><b>PRACTICE</b> Play money. No real value.</div>}
         
         <section className="pd-card pv-hero">
-          <div className="pd-card-h"><h1>PATRON Vault</h1><p>Deposit SEI, pick a strategy, it trades automatically</p></div>
+          <div className="pd-card-h"><h1>Let it trade for you</h1><p>Put money in, pick a style, it buys and sells for you</p></div>
           <span className="pd-chip">{NET.label}</span>
         </section>
         <Vault />
-        <p className="pd-foot">PatronStrategyVault × {NET.vaults.length} · market <a href={explorerAddr(NET.market)} target="_blank" rel="noreferrer">{NET.market.slice(0, 10)}… ↗</a> · token <a href={explorerAddr(NET.token)} target="_blank" rel="noreferrer">{NET.token.slice(0, 10)}… ↗</a></p>
+        <p className="pd-foot">{NET.vaults.length} styles · market <a href={explorerAddr(NET.market)} target="_blank" rel="noreferrer">{NET.market.slice(0, 10)}… ↗</a> · token <a href={explorerAddr(NET.token)} target="_blank" rel="noreferrer">{NET.token.slice(0, 10)}… ↗</a></p>
         {home && <p className="pd-foot"><a href={home} target="_blank" rel="noreferrer">patron.red →</a></p>}
       </main>
     </div>

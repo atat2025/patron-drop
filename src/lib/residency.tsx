@@ -13,5 +13,5 @@ export function useResidency() {
 }
 export function ResidencyCheck() {
   const v = useResidency();
-  return <label className="pd-fine pd-chk"><input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} /> I accept the terms: this is an experimental token and vault, not investment advice, and I may lose the full amount.</label>;
+  return <label className="pd-fine pd-chk"><input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} /> I understand this is new and risky, it is not financial advice, and I could lose all the money I put in.</label>;
 }

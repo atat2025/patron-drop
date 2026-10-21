@@ -9,7 +9,7 @@ export default function SiteFooter() {
         <Link href="/markets">Spot · Perp Market</Link>
         <Link href="/exchange">PATRON PERP Exchange</Link>
       </nav>
-      <p>© PATRON · Sei testnet · Powered by Monaco</p>
+      <p>© PATRON · Sei</p>
     </footer>
   );
 }

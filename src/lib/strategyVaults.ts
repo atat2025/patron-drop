@@ -5,9 +5,9 @@ import { NET } from "./network";
 
 /** PatronStrategyVault x3 (one strategy each). Addresses come from lib/network.ts. */
 export const META: Record<string, { name: string; agent: string; rule: string }> = {
-  momentum: { name: "Night Owl Momentum", agent: "Agent A (fictional)", rule: "Buys when the price is above its recent average, sells when it falls below." },
-  meanrev: { name: "Mean Revert Lite", agent: "Agent B (fictional)", rule: "Sells when the price is stretched above its average, buys back when it dips below." },
-  dca: { name: "Steady Stack DCA", agent: "Agent C (fictional)", rule: "Buys 1 PATRON on a schedule while cash > 40%, takes profit above +3%." },
+  momentum: { name: "Night Owl Momentum", agent: "Follows the trend", rule: "Buys when the price is going up, sells when it starts going down." },
+  meanrev: { name: "Mean Revert Lite", agent: "Buys low, sells high", rule: "Sells when the price jumps up, buys back when it drops." },
+  dca: { name: "Steady Stack DCA", agent: "Slow and steady", rule: "Buys a little at a time, sells some when it is up 3%." },
 };
 export const vaultAbi = parseAbi([
   "function summary() view returns (uint256 nav, uint256 seiBal, uint256 tokenBal, uint256 totalShares, uint256 pps, uint256 price, uint256 nRecs, address keeper, bool paused)",
