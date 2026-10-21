@@ -50,7 +50,6 @@ export default function MarketsPage() {
 
         <section className="mkp-g">
           <h2>Human</h2>
-          <Row href="/" logo={<span className="mkp-pat"><Mustache size={26} /></span>} sym="PAT" name="PATRON" price={pat ? fmtUsd(pat * usd) : undefined} />
           {HUMAN.map((h) => <Row key={h.name} logo={<img src={h.img} alt="" />} sym={h.name} name={h.sub} soon />)}
           <p className="mkp-note">Illustrative categories and coin designs. No affiliation, endorsement, listing, or live trading is implied. Logos reference <a href="https://coinmarketcap.com/currencies/official-trump/" target="_blank" rel="noopener noreferrer">TRUMP</a>, <a href="https://coinmarketcap.com/currencies/melania-meme/" target="_blank" rel="noopener noreferrer">MELANIA</a> on CoinMarketCap and <a href="https://www.youtube.com/@MrBeast" target="_blank" rel="noopener noreferrer">MrBeast on YouTube</a>.</p>
         </section>
