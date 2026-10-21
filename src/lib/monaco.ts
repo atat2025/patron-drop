@@ -47,11 +47,12 @@ export async function loadBook(m: Market): Promise<Book> {
 
 /** Where the shown chart came from, per market id: "monaco" or a reference feed when Monaco has too few trades. */
 export const candleSource: Record<string, string> = {};
-async function hlCandles(base: string): Promise<Candle[]> {
-  const end = Date.now(), start = end - 72 * 3600_000;
+const IV_MS: Record<string, number> = { "1m": 60_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000 };
+async function hlCandles(base: string, interval = "1h"): Promise<Candle[]> {
+  const end = Date.now(), start = end - 1000 * IV_MS[interval];
   for (const coin of [base, "xyz:" + base]) {
     try {
-      const r = await withTimeout(fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "candleSnapshot", req: { coin, interval: "1h", startTime: start, endTime: end } }) }).then((x) => x.json()), 6000);
+      const r = await withTimeout(fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "candleSnapshot", req: { coin, interval, startTime: start, endTime: end } }) }).then((x) => x.json()), 6000);
       if (Array.isArray(r) && r.length > 5) return r.map((c: { t: number; o: string; h: string; l: string; c: string; v: string }) => ({ t: c.t, o: +c.o, h: +c.h, l: +c.l, c: +c.c, v: +c.v }));
     } catch {}
   }
@@ -64,8 +65,8 @@ export async function loadCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h
     let cs: Candle[] = [];
     try { cs = await loadMonacoCandles(m, interval); } catch {}
     if (!thin(cs)) { candleSource[m.id] = "monaco"; return cs; }
-    const ref = await hlCandles(m.base);
-    if (ref.length) { candleSource[m.id] = "reference"; return ref.slice(-72); }
+    const ref = await hlCandles(m.base, interval);
+    if (ref.length) { candleSource[m.id] = "reference"; return ref; }
     candleSource[m.id] = "monaco"; return cs;
   }
   try { return await loadMonacoCandles(m, interval); } catch { return mockCandles(m.price || 1); }
@@ -77,7 +78,7 @@ async function loadMonacoCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h"
       .map((c) => ({ t: c.T ?? c.t, o: +c.o, h: +c.h, l: +c.l, c: +c.c, v: +((c as { v?: string }).v ?? 0) }))
       .filter((c) => [c.o, c.h, c.l, c.c].every(Number.isFinite) && c.h > 0)
       .sort((a, b) => a.t - b.t)
-      .slice(-120);
+      .slice(-1000);
   }
 }
 

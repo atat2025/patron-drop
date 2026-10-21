@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { parseUnits } from "viem";
-import Chart from "./Chart";
+import LwChart from "./LwChart";
 import {
   loadMarketsByType, loadBookMode, loadCandles, enrichMarkets, loadLiveTrades, connectWallet, placeOrder,
   loadBalances, loadOpenOrders, cancelOrder, loadPositions, depositAsset, marketAssets, candleSource,
@@ -13,12 +13,14 @@ import { config } from "@/lib/config";
 import type { Book, Candle, Market, PositionRow, TradeRow } from "@/lib/types";
 
 type Tab = "SPOT" | "PERP" | "PATRON";
+const TFL = { "1m": "1-minute", "5m": "5-minute", "15m": "15-minute", "1h": "1-hour", "4h": "4-hour", "1d": "1-day" } as const;
 const fp = (x: number) => !x ? "—" : x >= 1000 ? x.toLocaleString("en-US", { maximumFractionDigits: 2 }) : x >= 1 ? x.toFixed(3) : x < 0.001 ? x.toExponential(3) : x.toFixed(5);
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = {}) {
   const [tab, setTab] = useState<Tab>("PERP");
   const canTrade = !!config.clientId;
+  const [tf, setTf] = useState<"1m" | "5m" | "15m" | "1h" | "4h" | "1d">("5m");
   const [mk, setMk] = useState<Record<"SPOT" | "PERP", { markets: Market[]; live: boolean } | null>>({ SPOT: null, PERP: null });
   const [sel, setSel] = useState("");
   const [book, setBook] = useState<Book | null>(null);
@@ -65,9 +67,11 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
       if (lt && lt.length) { setTrades(lt); setLiveTape(true); }
       else { const mid = b.bids[0] && b.asks[0] ? (b.bids[0].price + b.asks[0].price) / 2 : m.price || 1; setTrades(m.mock ? mockTrades(mid) : []); setLiveTape(!m.mock); }
     };
-    loadCandles(m, "1h").then((c) => { if (on) setCandles(c); tick(); });
-    const t = setInterval(tick, 5000); return () => { on = false; clearInterval(t); };
-  }, [m?.id, tab]); // eslint-disable-line react-hooks/exhaustive-deps
+    setCandles([]);
+    loadCandles(m, tf).then((c) => { if (on) setCandles(c); tick(); });
+    const ct = setInterval(() => loadCandles(m, tf).then((c) => on && setCandles(c)), 30000);
+    const t = setInterval(tick, 5000); return () => { on = false; clearInterval(t); clearInterval(ct); };
+  }, [m?.id, tab, tf]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allMarkets = useMemo(() => [...(mk.SPOT?.markets ?? []), ...(mk.PERP?.markets ?? [])], [mk]);
   const refreshAcct = useCallback(async () => {
@@ -144,8 +148,9 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
 
             <section className="ux-card ux-chart">
               <div className="ux-ph"><h2>{m?.symbol ?? "—"} <small>{tab === "PERP" ? "Perpetual" : "Spot"}</small></h2><b>{fp(last)}</b></div>
-              <div className="ux-cbox"><Chart candles={candles} mode="candle" /></div>
-              {m && <small className="ux-mut">{candleSource[m.id] === "reference" ? "Few trades on Monaco yet, so this 1-hour chart shows the reference market price (Hyperliquid). Orders fill on Monaco." : "1-hour chart · Monaco trades"}</small>}
+              <div className="ux-tf">{(["1m", "5m", "15m", "1h", "4h", "1d"] as const).map((x) => <button key={x} className={tf === x ? "on" : ""} onClick={() => setTf(x)}>{x.replace("h", "H").replace("d", "D")}</button>)}</div>
+              <div className="ux-cbox"><LwChart candles={candles} resetKey={(m?.id ?? "") + tf} /></div>
+              {m && <small className="ux-mut">{candleSource[m.id] === "reference" ? `${TFL[tf]} chart · reference price (Hyperliquid), because Monaco has few trades yet. Orders fill on Monaco.` : `${TFL[tf]} chart · Monaco trades`}</small>}
             </section>
 
             <section className="ux-card ux-order">

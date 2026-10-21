@@ -64,7 +64,8 @@ function CandleSvg({ candles: all, W, H }: { candles: Candle[]; W: number; H: nu
   const last = candles[n - 1];
   const ticks = Array.from({ length: 4 }, (_, i) => bot + ((top - bot) * (i + 0.5)) / 4);
   const times = [0.1, 0.37, 0.63, 0.9].map((f) => Math.floor(f * (n - 1)));
-  const tfmt = (t: number) => new Date(t).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const span = n > 1 ? candles[n - 1].t - candles[0].t : 0;
+  const tfmt = (t: number) => span > 3 * 86_400_000 ? new Date(t).toLocaleDateString("en-US", { month: "numeric", day: "numeric" }) : new Date(t).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display: "block" }}>
       {ticks.filter((t) => Math.abs(y(t) - y(last.c)) > 14).map((t) => (

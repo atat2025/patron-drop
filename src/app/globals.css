@@ -229,3 +229,6 @@ a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-styl
 .ux-chart { background:#fffdf7; color:#111; border:1px solid #eee; --ink:#111; --panel:#fff; --muted:#666; --line-2:#e6e2d8; --long:#3aa0ff; --short:#ff0047; }
 .ux-chart .ux-ph b { color:#111; }
 @media (max-width:640px){ .ux-cbox { height:260px; } }
+.ux-tf { display:flex; gap:6px; margin:8px 0; flex-wrap:wrap; }
+.ux-tf button { flex:1 1 0; min-width:44px; min-height:44px; font-size:15px; font-weight:600; border:1px solid #e0dccf; background:#fff; color:#111; border-radius:8px; }
+.ux-tf button.on { background:#ff0047; border-color:#ff0047; color:#fff; }
