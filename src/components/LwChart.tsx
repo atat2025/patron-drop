@@ -24,7 +24,7 @@ export default function LwChart({ candles, resetKey }: { candles: Candle[]; rese
       localization: { timeFormatter: (t: number) => new Date(t * 1000).toLocaleString("en-US", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }) },
     });
     cs.current = c.addSeries(CandlestickSeries, { upColor: "#3aa0ff", borderUpColor: "#3aa0ff", wickUpColor: "#3aa0ff", downColor: "#ff0047", borderDownColor: "#ff0047", wickDownColor: "#ff0047" });
-    vs.current = c.addSeries(HistogramSeries, { color: "rgba(0,0,0,.12)", priceFormat: { type: "volume" }, priceScaleId: "" });
+    vs.current = c.addSeries(HistogramSeries, { color: "rgba(0,0,0,.12)", priceFormat: { type: "volume" }, priceScaleId: "", lastValueVisible: false, priceLineVisible: false });
     vs.current.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     chart.current = c;
     return () => { c.remove(); chart.current = null; };
