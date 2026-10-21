@@ -82,7 +82,7 @@ export default function PlansPage({ drop = "../" }: { drop?: string }) {
       </header>
       <main className="pd-main">
         <section className="pd-card">
-          <div className="pd-card-h"><h1>Let it trade for you</h1><p>Pick a plan, put money in, take it out any time</p></div>
+          <div className="pd-card-h"><h1>Automated trading</h1><p>Pick a plan, put money in, take it out any time</p></div>
         </section>
         <div className="pd-tabs" style={{ alignSelf: "flex-start", flexWrap: "wrap" }}>
           {CHAINS.map((c) => <button key={c.key} className={c.key === ck ? "on" : ""} disabled={!c.enabled} onClick={() => setCk(c.key)}>{c.name}{c.enabled ? "" : " · soon"}</button>)}

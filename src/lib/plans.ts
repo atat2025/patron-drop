@@ -13,7 +13,7 @@ const chainOf = (c: ChainCfg) => defineChain({ id: c.chainId, name: c.name, nati
 const pubs: Record<string, ReturnType<typeof createPublicClient>> = {};
 const pub = (c: ChainCfg) => (pubs[c.key] ||= createPublicClient({ chain: chainOf(c), transport: http() }));
 
-export interface PlanView { cfg: PlanCfg; nav: bigint; sei: bigint; usdc: bigint; pat: bigint; shares: bigint; pps: number; usdPerSei: number; patSei: number; fee: number; paused: boolean; hist: { t: number; pps: number }[]; mine: bigint; mineValue: bigint; wallet: bigint }
+export interface PlanView { cfg: PlanCfg; nav: bigint; sei: bigint; usdc: bigint; pat: bigint; shares: bigint; pps: number; usdPerSei: number; patSei: number; fee: number; paused: boolean; hist: { t: number; pps: number; kind: number; nav: bigint }[]; mine: bigint; mineValue: bigint; wallet: bigint }
 
 export async function readPlan(c: ChainCfg, p: PlanCfg, user?: Address | null): Promise<PlanView> {
   const cl = pub(c);
@@ -26,7 +26,7 @@ export async function readPlan(c: ChainCfg, p: PlanCfg, user?: Address | null): 
     wallet = p.token ? await cl.readContract({ address: p.token, abi: erc20, functionName: "balanceOf", args: [user] }) : await cl.getBalance({ address: user });
   }
   return { cfg: p, nav: s[0], sei: s[1], usdc: s[2], pat: s[3], shares: s[4], pps: Number(s[5]) / 1e18, usdPerSei: 1e18 / Number(s[6]), patSei: Number(s[7]) / 1e18, fee: Number(fee) / 100, paused: s[10],
-    hist: recs.map((r) => ({ t: r.time, pps: Number(r.ppsNano) / 1e9 })), mine, mineValue, wallet };
+    hist: recs.map((r) => ({ t: r.time, pps: Number(r.ppsNano) / 1e9, kind: r.kind, nav: r.navBase })), mine, mineValue, wallet };
 }
 
 /** "Put in $10 → about $X in a month", from the plan's own share-price history. null = not enough history. */

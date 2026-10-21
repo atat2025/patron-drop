@@ -59,7 +59,7 @@ export default function PatHome() {
         </div>
         <PriceSection price={price} usd={usd} st={st} />
         <StakeSection held={bal ? Math.floor(Number(formatEther(bal))) : 0} />
-        <a className="pd-sec pd-link" href="vault/">Put money in: let it trade for you →</a>
+        <a className="pd-sec pd-link" href="vault/">Automated trading →</a>
         <p className="pd-foot"><a href={EXT} target="_blank" rel="noreferrer">patron.red →</a></p>
       </main>
       {mode && <div className="pd-ov" onClick={() => setMode(null)}>
@@ -95,7 +95,7 @@ function PriceSection({ price, usd, st, curveOnly }: { price?: number; usd: numb
   return (
     <section className={curveOnly ? "" : "pd-panel"}>
       {!curveOnly && <div className="pd-ph"><b>Price</b>
-        <div className="pd-tabs"><button className={view === "history" ? "on" : ""} onClick={() => setView("history")}>History</button><button className={view === "curve" ? "on" : ""} onClick={() => setView("curve")}>Future</button></div></div>}
+        <div className="pd-tabs"><button className={view === "history" ? "on" : ""} onClick={() => setView("history")}>History</button><button className={view === "curve" ? "on" : ""} onClick={() => setView("curve")}>Curve</button></div></div>}
       {!curveOnly && <div className="pd-pbig">{price && usd ? u(price) : "…"}<small> per PAT now</small></div>}
       <svg viewBox={`0 0 ${W} ${H}`} className="pd-chart">
         <path d={d + ` L${W},${H} L0,${H}Z`} fill="var(--pd-red)" opacity=".08" />

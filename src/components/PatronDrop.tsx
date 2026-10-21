@@ -126,7 +126,7 @@ export default function PatronDrop() {
         </div>
         <PriceSection st={st} />
         <StakeSection held={st.held} />
-        {!embed && <a className="pd-sec pd-link" href={isTestnet ? "vault-old/" : "vault/"}>Put money in: let it trade for you →</a>}
+        {!embed && <a className="pd-sec pd-link" href={isTestnet ? "vault-old/" : "vault/"}>Automated trading →</a>}
         {!embed && EXT && <p className="pd-foot"><a href={EXT} target="_blank" rel="noreferrer">patron.red →</a></p>}
         <p className="pd-foot">{LIVE ? (isTestnet ? "Practice mode: play money, no real value. Shipping details are never made public." : "Shipping details are never made public.") : "Demo mode: no real payments, tokens or shipping. State is stored only in this browser."}</p>
       </main>

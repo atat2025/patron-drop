@@ -179,7 +179,7 @@ export default function VaultPage({ home = "", drop = "../" }: { home?: string; 
         {isTestnet && <div className="pd-tn" role="note"><b>PRACTICE</b> Play money. No real value.</div>}
         
         <section className="pd-card pv-hero">
-          <div className="pd-card-h"><h1>Let it trade for you</h1><p>Put money in, pick a style, it buys and sells for you</p></div>
+          <div className="pd-card-h"><h1>Automated trading</h1><p>Put money in, pick a style, it buys and sells for you</p></div>
           <span className="pd-chip">{NET.label}</span>
         </section>
         <Vault />
