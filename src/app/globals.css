@@ -237,3 +237,11 @@ a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-styl
 .ux-lwwrap{position:relative;width:100%;height:100%}
 .ux-auto{position:absolute;left:6px;top:6px;z-index:3;min-height:32px;padding:0 12px;font-size:13px;font-weight:600;border:1px solid #e0dccf;background:#fff;border-radius:8px;color:#111}
 .ux-auto.on{background:#ff0047;border-color:#ff0047;color:#fff}
+
+.ux-search{width:100%;box-sizing:border-box;min-height:44px;font-size:16px;padding:0 12px;border:1px solid #e0dccf;border-radius:10px;background:#fff;margin:0 0 8px;color:#111}
+.ux-mkn{display:flex;align-items:center;gap:10px;min-width:0}
+.ux-mkn>span{display:flex;flex-direction:column;line-height:1.15}
+.ux-mkn small{font-weight:400;font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.ux-logo{flex:0 0 auto;width:30px;height:30px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid #eee;box-sizing:border-box}
+.ux-logo-f{display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-weight:700;font-size:13px;color:#fff;background:#999}
+.ux-none{padding:14px 6px;text-align:center;color:#ff0047;font-weight:600}

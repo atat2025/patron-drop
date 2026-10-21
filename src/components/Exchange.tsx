@@ -3,6 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { parseUnits } from "viem";
 import LwChart from "./LwChart";
+import { logoOf, matches, NAMES } from "@/lib/marketMeta";
+
+function Logo({ base }: { base: string }) {
+  const [bad, setBad] = useState(false);
+  const src = logoOf(base);
+  return src && !bad ? <img className="ux-logo" src={src} alt="" onError={() => setBad(true)} /> : <i className="ux-logo ux-logo-f">{base.slice(0, 1)}</i>;
+}
 import {
   loadMarketsByType, loadBookMode, loadCandles, enrichMarkets, loadLiveTrades, connectWallet, placeOrder,
   loadBalances, loadOpenOrders, cancelOrder, loadPositions, depositAsset, marketAssets, candleSource,
@@ -22,6 +29,7 @@ const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = {}) {
   const [tab, setTab] = useState<Tab>("PERP");
   const canTrade = !!config.clientId;
+  const [q, setQ] = useState("");
   const [tf, setTf] = useState<(typeof TFS)[number]>("5m");
   const [mk, setMk] = useState<Record<"SPOT" | "PERP", { markets: Market[]; live: boolean } | null>>({ SPOT: null, PERP: null });
   const [sel, setSel] = useState("");
@@ -139,13 +147,15 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
         ) : (
           <div className="ux-grid">
             <aside className="ux-card ux-mk">
-              {list.map((x) => (
+              <input className="ux-search" type="search" inputMode="search" autoCapitalize="off" autoCorrect="off" placeholder="Search markets (e.g. SEI, Apple, gold)" value={q} onChange={(e) => setQ(e.target.value)} />
+              {list.filter((x) => matches(x.base, x.symbol, q)).map((x) => (
                 <button key={x.id} className={x.id === m?.id ? "on" : ""} onClick={() => setSel(x.id)}>
-                  <b>{x.symbol}</b><span>{fp(x.price)}</span>
+                  <b className="ux-mkn"><Logo base={x.base} /><span>{x.symbol}<small>{(NAMES[x.base] ?? "").replace(/\s[^\x00-\x7F].*$/, "")}</small></span></b><span>{fp(x.price)}</span>
                   <em className={x.change24h >= 0 ? "up" : "dn"}>{`${x.change24h >= 0 ? "+" : ""}${x.change24h.toFixed(2)}%`}</em>
                 </button>
               ))}
               {!list.length && <p className="ux-mut">Loading markets…</p>}
+              {!!list.length && !list.some((x) => matches(x.base, x.symbol, q)) && <p className="ux-none">No market found for “{q}”</p>}
             </aside>
 
             <section className="ux-card ux-chart">
