@@ -8,8 +8,8 @@ import { readGauge, GAUGE, type GaugeData } from "@/lib/gauge";
 const JPY_PER_USD = Number(process.env.NEXT_PUBLIC_JPY_PER_USD || "158");
 const yen = (jpy: number) => "$" + Math.round(jpy / JPY_PER_USD).toLocaleString("en-US");
 
-const TARGET = process.env.NEXT_PUBLIC_COUNTDOWN_TARGET || "2026-11-30T00:00:00+09:00";
-const LABEL = process.env.NEXT_PUBLIC_COUNTDOWN_LABEL || "Listing in";
+const TARGET = process.env.NEXT_PUBLIC_COUNTDOWN_TARGET || "2026-12-20T00:00:00+09:00";
+const LABEL = process.env.NEXT_PUBLIC_COUNTDOWN_LABEL || "Release in";
 const FARM_TARGET = Number(process.env.NEXT_PUBLIC_FARMING_TARGET || "1000000");
 
 export function Countdown() {
