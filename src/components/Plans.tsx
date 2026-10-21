@@ -61,7 +61,7 @@ function PlanCard({ chain, v, me, onConnect, refresh }: { chain: ChainCfg; v: P.
   );
 }
 
-export default function PlansPage({ drop = "../../" }: { drop?: string }) {
+export default function PlansPage({ drop = "../" }: { drop?: string }) {
   const [ck, setCk] = useState("sei");
   const chain = CHAINS.find((c) => c.key === ck)!;
   const [me, setMe] = useState<Address | null>(null);
@@ -77,7 +77,7 @@ export default function PlansPage({ drop = "../../" }: { drop?: string }) {
     <div className="pd">
       <header className="pd-top">
         <a className="pd-brand" href={drop}><Mustache size={22} /><span>patron<i>_</i></span></a>
-        <div className="pd-actions"><span className="pd-demo live">PREVIEW</span>
+        <div className="pd-actions"><span className="pd-demo live">SEI</span>
           <button className="pd-wallet" onClick={connect}>{me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "Connect"}</button></div>
       </header>
       <main className="pd-main">
