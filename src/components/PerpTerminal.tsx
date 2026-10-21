@@ -80,6 +80,12 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
     });
     return () => { on = false; };
   }, [venue, spot]);
+  useEffect(() => {
+    if (sel || !markets.length) return;
+    const want = new URLSearchParams(window.location.search).get("market")?.toUpperCase();
+    const hit = want && markets.find((x) => x.base.toUpperCase() === want || x.symbol.replace("/", "").toUpperCase() === want);
+    if (hit) setSel(hit.id);
+  }, [markets, sel]);
   const m = markets.find((x) => x.id === sel) ?? markets[0];
   const mode = spot ? "SPOT" : "MARGIN";
   const vName = venue === "hl" ? "Hyperliquid" : "Monaco";

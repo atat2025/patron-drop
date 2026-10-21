@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS: [string, string][] = [["/", "Home"], ["/vault/", "AI Trade"], ["/spot/", "Spot"], ["/perp/", "Perpetual"], ["/digitaltwin/", "DigitalTwin"], ["/offerpad/", "OfferPad"], ["/bridge/", "Bridge"]];
+const LINKS: [string, string][] = [["/", "Home"], ["/markets/", "Markets"], ["/vault/", "AI Trade"], ["/spot/", "Spot"], ["/perp/", "Perpetual"], ["/digitaltwin/", "DigitalTwin"], ["/offerpad/", "OfferPad"], ["/bridge/", "Bridge"]];
 
 export default function SiteNav() {
   const path = usePathname() || "/";
