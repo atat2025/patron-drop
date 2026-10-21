@@ -17,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html suppressHydrationWarning lang="en" translate="no" className={`${dm.variable} notranslate`}><head><meta name="google" content="notranslate" /><script dangerouslySetInnerHTML={{ __html: `try{var q=location.search.match(/[?&]theme=(dark|light)/);if(q)localStorage.setItem("patron-theme",q[1]);if(localStorage.getItem("patron-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}` }} /></head><body><SiteNav />{children}<SiteFooter /></body></html>;
+  return <html suppressHydrationWarning lang="en" translate="no" className={`${dm.variable} notranslate`}><head><meta name="google" content="notranslate" /><script dangerouslySetInnerHTML={{ __html: `try{var q=location.search.match(/[?&]theme=(dark|light)/);if(q)localStorage.setItem("patron-theme",q[1]);if(localStorage.getItem("patron-theme")!=="light")document.documentElement.setAttribute("data-theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}` }} /></head><body><SiteNav />{children}<SiteFooter /></body></html>;
 }

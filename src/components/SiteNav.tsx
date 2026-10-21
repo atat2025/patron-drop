@@ -2,6 +2,28 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
+import { MUSTACHE_PATH } from "./Mustache";
+
+type Tile = { img?: string; mus?: boolean; txt?: string; bg?: string; pos?: string };
+const L = (b: string) => ({ img: `/logos/${b}` });
+const MENU: { h: string; l: string; glow: string; tiles: Tile[] }[] = [
+  { h: "/", l: "Home", glow: "#ff0047", tiles: [{ mus: true }, L("SEI.svg"), { txt: "$PAT", bg: "#111" }] },
+  { h: "/markets/", l: "Markets", glow: "#f5b301", tiles: [{ img: "/logos/human/cmc-35336.png" }, L("NVDA.svg"), L("BTC.svg"), L("ETH.svg"), { img: "/logos/human/cmc-35347.png" }] },
+  { h: "/vault/", l: "AI Trade", glow: "#3aa0ff", tiles: [{ txt: "AI", bg: "linear-gradient(135deg,#3aa0ff,#7b5cff)" }, { mus: true }, L("SEI.svg"), { txt: "$", bg: "#1f9d6b" }] },
+  { h: "/spot/", l: "Spot", glow: "#1f9d6b", tiles: [L("SEI.svg"), L("BTC.svg"), L("ETH.svg"), L("SOL.svg")] },
+  { h: "/perp/", l: "Perpetual", glow: "#ff5c86", tiles: [L("AAPL.svg"), L("TSLA.svg"), L("NVDA.svg"), L("MSFT.svg"), L("GOLD.png")] },
+  { h: "/digitaltwin/", l: "DigitalTwin", glow: "#9b5cff", tiles: [{ img: "/digitaltwin-hero.webp", pos: "30% 40%" }, { bg: "radial-gradient(circle at 35% 35%,#ffb3c7,#ff0047 55%,#5a0019)" }, { img: "/digitaltwin-hero.webp", pos: "70% 40%" }, { bg: "radial-gradient(circle at 35% 35%,#b9e0ff,#3aa0ff 55%,#0b2b52)" }] },
+  { h: "/offerpad/", l: "OfferPad", glow: "#ff8a00", tiles: [{ txt: "NEW", bg: "linear-gradient(135deg,#ff8a00,#ff0047)" }, { img: "/logos/human/cmc-35436.png" }, { img: "/logos/human/cmc-38151.png" }] },
+  { h: "/bridge/", l: "Bridge", glow: "#2ec4b6", tiles: [L("SEI.svg"), { txt: "⇄", bg: "#222" }, L("HOOD.svg")] },
+];
+function TileEl({ t, i }: { t: Tile; i: number }) {
+  const style: React.CSSProperties = { zIndex: 10 - i, transform: `rotate(${[-6, 3, -2, 5, -4, 2][i % 6]}deg)` };
+  if (t.img && t.pos) return <span className="mn-t" style={{ ...style, backgroundImage: `url(${t.img})`, backgroundSize: "300%", backgroundPosition: t.pos }} />;
+  if (t.img) return <span className="mn-t mn-ti" style={style}><img src={t.img} alt="" /></span>;
+  if (t.mus) return <span className="mn-t" style={{ ...style, background: "#ff0047" }}><svg viewBox="-20 -20 1405 486" width="34"><path d={MUSTACHE_PATH} fill="#fff" /></svg></span>;
+  return <span className="mn-t" style={{ ...style, background: t.bg }}>{t.txt}</span>;
+}
 
 const LINKS: [string, string][] = [["/", "Home"], ["/markets/", "Markets"], ["/vault/", "AI Trade"], ["/spot/", "Spot"], ["/perp/", "Perpetual"], ["/digitaltwin/", "DigitalTwin"], ["/offerpad/", "OfferPad"], ["/bridge/", "Bridge"]];
 
@@ -25,7 +47,8 @@ function ThemeToggle() {
 export default function SiteNav() {
   const path = usePathname() || "/";
   const [open, setOpen] = useState(false);
-  useEffect(() => setOpen(false), [path]);
+  useEffect(() => setOpen(/[?&]menu=open\b/.test(window.location.search)), [path]);
+  useEffect(() => { document.body.style.overflow = open ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [open]);
   if (path.startsWith("/admin")) return <div className="sn-float"><ThemeToggle /></div>;
   const on = (h: string) => (h === "/" ? path === "/" : path.startsWith(h.replace(/\/$/, "")));
   return (
@@ -35,7 +58,19 @@ export default function SiteNav() {
         <ThemeToggle />
         <button className="sn-burger" aria-label="Menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}><span /><span /><span /></button>
       </div>
-      {open && <div className="sn-drop">{LINKS.map(([h, l]) => <Link key={h} href={h} className={on(h) ? "on" : ""}>{l}</Link>)}</div>}
+      {open && createPortal(
+        <div className="mn" role="dialog" aria-label="Menu">
+          <div className="mn-top"><b>Menu</b><button className="mn-x" aria-label="Close menu" onClick={() => setOpen(false)}>×</button></div>
+          <div className="mn-list">
+            {MENU.map((c) => (
+              <Link key={c.h} href={c.h} className={"mn-c" + (on(c.h) ? " on" : "")} style={{ ["--g" as string]: c.glow }} onClick={() => setOpen(false)}>
+                <span className="mn-l">{c.l}</span>
+                <span className="mn-tiles">{c.tiles.map((t, i) => <TileEl key={i} t={t} i={i} />)}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      , document.body)}
     </nav>
   );
 }
