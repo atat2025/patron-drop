@@ -7,14 +7,14 @@ import { MUSTACHE_PATH } from "./Mustache";
 
 type Tile = { img?: string; mus?: boolean; txt?: string; bg?: string; pos?: string };
 const L = (b: string) => ({ img: `/logos/${b}` });
-const MENU: { h: string; l: string; glow: string; tiles: Tile[] }[] = [
-  { h: "/", l: "Home", glow: "#ff0047", tiles: [{ mus: true }, L("SEI.svg"), { txt: "$PAT", bg: "#111" }] },
+const MENU: { h: string; l: string; glow: string; tiles: Tile[]; sub?: string }[] = [
+  { h: "/", l: "Home", glow: "#ff0047", tiles: [{ mus: true }] },
   { h: "/markets/", l: "Markets", glow: "#f5b301", tiles: [{ img: "/logos/human/cmc-35336.png" }, L("NVDA.svg"), L("BTC.svg"), L("ETH.svg"), { img: "/logos/human/cmc-35347.png" }] },
-  { h: "/vault/", l: "AI Trade", glow: "#3aa0ff", tiles: [{ txt: "AI", bg: "linear-gradient(135deg,#3aa0ff,#7b5cff)" }, { mus: true }, L("SEI.svg"), { txt: "$", bg: "#1f9d6b" }] },
+  { h: "/vault/", l: "AI Trade", glow: "#3aa0ff", tiles: [{ txt: "AI", bg: "linear-gradient(135deg,#3aa0ff,#7b5cff)" }, { txt: "$", bg: "#1f9d6b" }] },
   { h: "/spot/", l: "Spot", glow: "#1f9d6b", tiles: [L("SEI.svg"), L("BTC.svg"), L("ETH.svg"), L("SOL.svg")] },
   { h: "/perp/", l: "Perpetual", glow: "#ff5c86", tiles: [L("AAPL.svg"), L("TSLA.svg"), L("NVDA.svg"), L("MSFT.svg"), L("GOLD.png")] },
-  { h: "/digitaltwin/", l: "DigitalTwin", glow: "#9b5cff", tiles: [{ img: "/digitaltwin-hero.webp", pos: "30% 40%" }, { bg: "radial-gradient(circle at 35% 35%,#ffb3c7,#ff0047 55%,#5a0019)" }, { img: "/digitaltwin-hero.webp", pos: "70% 40%" }, { bg: "radial-gradient(circle at 35% 35%,#b9e0ff,#3aa0ff 55%,#0b2b52)" }] },
-  { h: "/offerpad/", l: "OfferPad", glow: "#ff8a00", tiles: [{ txt: "NEW", bg: "linear-gradient(135deg,#ff8a00,#ff0047)" }, { img: "/logos/human/cmc-35436.png" }, { img: "/logos/human/cmc-38151.png" }] },
+  { h: "/digitaltwin/", l: "DigitalTwin", glow: "#9b5cff", tiles: [{ img: "/dt-face.webp" }] },
+  { h: "/offerpad/", l: "OfferPad", glow: "#ff8a00", sub: "Coming soon", tiles: [] },
   { h: "/bridge/", l: "Bridge", glow: "#2ec4b6", tiles: [L("SEI.svg"), { txt: "⇄", bg: "#222" }, L("HOOD.svg")] },
 ];
 function TileEl({ t, i }: { t: Tile; i: number }) {
@@ -65,6 +65,7 @@ export default function SiteNav() {
             {MENU.map((c) => (
               <Link key={c.h} href={c.h} className={"mn-c" + (on(c.h) ? " on" : "")} style={{ ["--g" as string]: c.glow }} onClick={() => setOpen(false)}>
                 <span className="mn-l">{c.l}</span>
+                {c.sub && <span className="mn-sub">{c.sub}</span>}
                 <span className="mn-tiles">{c.tiles.map((t, i) => <TileEl key={i} t={t} i={i} />)}</span>
               </Link>
             ))}
