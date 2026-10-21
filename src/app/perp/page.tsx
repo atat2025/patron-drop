@@ -1,4 +1,4 @@
 import type { Metadata } from "next";
-import Exchange from "@/components/Exchange";
+import PerpTerminal from "@/components/PerpTerminal";
 export const metadata: Metadata = { title: "PERP · PATRON", alternates: { canonical: "./" } };
-export default function Page() { return <Exchange perpOnly />; }
+export default function Page() { return <PerpTerminal />; }
