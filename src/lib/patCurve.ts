@@ -37,3 +37,27 @@ export async function sell(a: bigint) {
     await wait(await x.writeContract({ address: PAT_SEI, abi: erc20, functionName: "approve", args: [CURVE, a], account: x.account!, chain: sei }));
   return wait(await x.writeContract({ address: CURVE, abi, functionName: "sell", args: [a, min, dl()], account: x.account!, chain: sei }));
 }
+
+const pAbi = parseAbi(["function p0() view returns (uint256)", "function slope() view returns (uint256)",
+  "event Bought(address indexed buyer, uint256 amount, uint256 cost, uint256 fee)", "event Sold(address indexed seller, uint256 amount, uint256 proceeds, uint256 fee)"]);
+export const DEPLOY_BLOCK = 238894832n;
+/** Price (SEI per PAT, as number) after `s` PAT sold. */
+export async function curveParams() {
+  const [p0, slope] = await Promise.all([c.readContract({ address: CURVE, abi: pAbi, functionName: "p0" }), c.readContract({ address: CURVE, abi: pAbi, functionName: "slope" })]);
+  return { p0: Number(p0) / 1e18, slope: Number(slope) / 1e36 };
+}
+export type PatFill = { side: "BUY" | "SELL"; amount: number; price: number; tx: string; block: bigint };
+/** Recent buys/sells (newest ~80k blocks, 2000-block chunks; RPC limit). */
+export async function fills(): Promise<PatFill[]> {
+  const tip = await c.getBlockNumber(); const from = tip - 80_000n > DEPLOY_BLOCK ? tip - 80_000n : DEPLOY_BLOCK;
+  const ranges: [bigint, bigint][] = []; for (let b = from; b <= tip; b += 2000n) ranges.push([b, b + 1999n > tip ? tip : b + 1999n]);
+  const out: PatFill[] = [];
+  for (let i = 0; i < ranges.length; i += 8) {
+    const res = await Promise.all(ranges.slice(i, i + 8).map(([a, b]) => c.getLogs({ address: CURVE, events: pAbi.filter((x) => x.type === "event"), fromBlock: a, toBlock: b }).catch(() => [])));
+    for (const logs of res) for (const l of logs as unknown as { eventName: string; args: { amount: bigint; cost?: bigint; proceeds?: bigint }; transactionHash: string; blockNumber: bigint }[]) {
+      const amt = Number(l.args.amount) / 1e18; const sei = Number(l.eventName === "Bought" ? l.args.cost! : l.args.proceeds!) / 1e18;
+      if (amt > 0) out.push({ side: l.eventName === "Bought" ? "BUY" : "SELL", amount: amt, price: sei / amt, tx: l.transactionHash, block: l.blockNumber });
+    }
+  }
+  return out.sort((a, b) => Number(a.block - b.block));
+}

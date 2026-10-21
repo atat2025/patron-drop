@@ -146,7 +146,7 @@ export default function PatronDrop() {
   );
 }
 
-function Art({ small }: { small?: boolean }) {
+export function Art({ small }: { small?: boolean }) {
   return <div className={`pd-art ${small ? "sm" : ""}`}><span className="pd-coin"><Mustache size={small ? 110 : 150} /></span></div>;
 }
 
@@ -272,7 +272,7 @@ function PriceSection({ st }: { st: St }) {
   );
 }
 
-function StakeSection({ held }: { held: number }) {
+export function StakeSection({ held }: { held: number }) {
   const APR = 12;
   const [staked, setStaked] = useState(0);
   const [t0, setT0] = useState(0);
