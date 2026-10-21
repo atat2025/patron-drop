@@ -225,3 +225,7 @@ a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-styl
 .pd-chk { display:flex; gap:8px; align-items:flex-start; text-align:left; line-height:1.4; } .pd-chk input { margin-top:3px; flex:none; } .pd-chk em { color:#b00020; font-style:normal; }
 .br-row { display:flex; justify-content:space-between; align-items:center; gap:8px; } .br-row small { color:#777; } .br-row b { font-weight:600; }
 .br-flip { align-self:center; padding:0 18px; } .br-addr { font-size:13px !important; font-family:ui-monospace,monospace !important; }
+/* PERP chart: light, readable */
+.ux-chart { background:#fffdf7; color:#111; border:1px solid #eee; --ink:#111; --panel:#fff; --muted:#666; --line-2:#e6e2d8; --long:#3aa0ff; --short:#ff0047; }
+.ux-chart .ux-ph b { color:#111; }
+@media (max-width:640px){ .ux-cbox { height:260px; } }

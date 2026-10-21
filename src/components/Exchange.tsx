@@ -2,11 +2,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { parseUnits } from "viem";
-import Mustache from "./Mustache";
 import Chart from "./Chart";
 import {
   loadMarketsByType, loadBookMode, loadCandles, enrichMarkets, loadLiveTrades, connectWallet, placeOrder,
-  loadBalances, loadOpenOrders, cancelOrder, loadPositions, depositAsset, marketAssets,
+  loadBalances, loadOpenOrders, cancelOrder, loadPositions, depositAsset, marketAssets, candleSource,
   type BalRow, type OrderRow,
 } from "@/lib/monaco";
 import { mockTrades } from "@/lib/mock";
@@ -113,7 +112,7 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
   return (
     <div className="pd ux">
       <header className="pd-top">
-        <Link className="pd-brand" href="/"><Mustache size={22} /><span>patron<i>_</i></span></Link>
+        <Link className="pd-brand" href="/"><span>patron<i>_</i></span></Link>
         <div className="pd-actions">
           <span className="ux-net">{config.network === "mainnet" ? "Sei" : "Sei testnet"}</span>
           <button className="pd-wallet" onClick={connect}>{addr ? short(addr) : "Connect Wallet"}</button>
@@ -143,9 +142,10 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
               {!list.length && <p className="ux-mut">Loading markets…</p>}
             </aside>
 
-            <section className="ux-card ux-dark ux-chart">
+            <section className="ux-card ux-chart">
               <div className="ux-ph"><h2>{m?.symbol ?? "—"} <small>{tab === "PERP" ? "Perpetual" : "Spot"}</small></h2><b>{fp(last)}</b></div>
               <div className="ux-cbox"><Chart candles={candles} mode="candle" /></div>
+              {m && <small className="ux-mut">{candleSource[m.id] === "reference" ? "Few trades on Monaco yet, so this 1-hour chart shows the reference market price (Hyperliquid). Orders fill on Monaco." : "1-hour chart · Monaco trades"}</small>}
             </section>
 
             <section className="ux-card ux-order">

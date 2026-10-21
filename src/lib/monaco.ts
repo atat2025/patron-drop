@@ -45,16 +45,40 @@ export async function loadBook(m: Market): Promise<Book> {
   } catch { return mockBook(m.price || 1); }
 }
 
+/** Where the shown chart came from, per market id: "monaco" or a reference feed when Monaco has too few trades. */
+export const candleSource: Record<string, string> = {};
+async function hlCandles(base: string): Promise<Candle[]> {
+  const end = Date.now(), start = end - 72 * 3600_000;
+  for (const coin of [base, "xyz:" + base]) {
+    try {
+      const r = await withTimeout(fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "candleSnapshot", req: { coin, interval: "1h", startTime: start, endTime: end } }) }).then((x) => x.json()), 6000);
+      if (Array.isArray(r) && r.length > 5) return r.map((c: { t: number; o: string; h: string; l: string; c: string; v: string }) => ({ t: c.t, o: +c.o, h: +c.h, l: +c.l, c: +c.c, v: +c.v }));
+    } catch {}
+  }
+  return [];
+}
+const thin = (cs: Candle[]) => cs.length < 12 || new Set(cs.slice(-24).map((c) => c.c)).size < 4;
 export async function loadCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h" | "4h" | "1d" = "1h"): Promise<Candle[]> {
   if (m.mock) return mockCandles(m.price);
-  try {
+  if (config.network === "mainnet") {
+    let cs: Candle[] = [];
+    try { cs = await loadMonacoCandles(m, interval); } catch {}
+    if (!thin(cs)) { candleSource[m.id] = "monaco"; return cs; }
+    const ref = await hlCandles(m.base);
+    if (ref.length) { candleSource[m.id] = "reference"; return ref.slice(-72); }
+    candleSource[m.id] = "monaco"; return cs;
+  }
+  try { return await loadMonacoCandles(m, interval); } catch { return mockCandles(m.price || 1); }
+}
+async function loadMonacoCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h" | "4h" | "1d"): Promise<Candle[]> {
+  {
     const cs = await withTimeout(getPublicSdk().market.getCandlesticks(m.id, interval));
     return cs
       .map((c) => ({ t: c.T ?? c.t, o: +c.o, h: +c.h, l: +c.l, c: +c.c, v: +((c as { v?: string }).v ?? 0) }))
       .filter((c) => [c.o, c.h, c.l, c.c].every(Number.isFinite) && c.h > 0)
       .sort((a, b) => a.t - b.t)
       .slice(-120);
-  } catch { return config.network === "mainnet" ? [] : mockCandles(m.price || 1); }
+  }
 }
 
 // Recent trades: derived from mock until a public trades endpoint/WS subscription is wired (see README TODO)
