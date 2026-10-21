@@ -13,13 +13,10 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
   const [step, setStep] = useState<Step>("quote");
   const [n, setN] = useState(1);
   const [cost, setCost] = useState<bigint | null>(null);
-  const [notJp, setNotJp] = useState(false);
-  const [tzJp, setTzJp] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [bal, setBal] = useState<bigint>(0n);
   const [rcpt, setRcpt] = useState<{ hash: string; got: number; sei: number } | null>(null);
   const start = useRef<bigint>(0n);
-  useEffect(() => { try { setTzJp(Intl.DateTimeFormat().resolvedOptions().timeZone === "Asia/Tokyo"); } catch {} }, []);
   useEffect(() => { let on = true; chain.quoteBuy(n).then(([c, f]) => on && setCost(c + f)).catch(() => on && setCost(null)); return () => { on = false; }; }, [n]);
 
   const curveSei = cost == null ? null : Number(formatEther(cost + cost / 100n)); // +1% slippage cap
@@ -74,10 +71,8 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
         <dt><b>Total (estimate)</b></dt><dd><b>{total == null ? "…" : usd(total)}</b></dd>
       </dl>
       <small className="pd-fine">Payment runs through our partner Transak via SEI: your card buys SEI, then that SEI buys PATRON from the curve. Fees and FX are estimates; Transak shows the exact amount. Minimum {usd(CARD.minUsd)}. Leftover SEI stays in your wallet. Network fees (gas) are paid in SEI. The price is set by the curve at purchase time, with up to 1% slippage allowed.</small>
-      <div className="pd-err cb-jp">Not available to residents of Japan.{tzJp && " Your device is set to Japan time."}</div>
-      <label className="pd-fine cb-chk"><input type="checkbox" checked={notJp} onChange={(e) => setNotJp(e.target.checked)} /> I am not a resident of Japan</label>
       {isPlaceholderKey() && <small className="pd-fine">⚠ Placeholder test key (Transak STAGING, no real charge).</small>}
-      <button className="pd-buy" disabled={!notJp || total == null} onClick={begin}>{`Buy ${n} PATRON (card / Apple Pay)`}</button>
+      <button className="pd-buy" disabled={total == null} onClick={begin}>{`Buy ${n} PATRON (card / Apple Pay)`}</button>
     </>}
 
     {(step === "pay" || step === "wait") && <>

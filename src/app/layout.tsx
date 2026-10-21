@@ -16,5 +16,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="en" className={dm.variable}><body>{children}<SiteFooter /></body></html>;
+  return <html lang="en" translate="no" className={`${dm.variable} notranslate`}><head><meta name="google" content="notranslate" /></head><body>{children}<SiteFooter /></body></html>;
 }

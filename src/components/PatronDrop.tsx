@@ -8,7 +8,7 @@ import EasyLogin from "./EasyLogin";
 import { Countdown, LiquidityGauge } from "./DropMeters";
 import { loadMarketFills, type Fill } from "@/lib/launchHistory";
 import { NET, isTestnet } from "@/lib/network";
-import { JapanNotice, ResidencyCheck, useResidency } from "@/lib/residency";
+import { ResidencyCheck, useResidency } from "@/lib/residency";
 import { useSeiUsd, usdSei, fmtUsd, fmtSei, seiUsd } from "@/lib/seiUsd";
 
 /* Unisocks-style constant-product curve (x*y=k), priced client-side in USD. DEMO ONLY. */
@@ -101,7 +101,7 @@ export default function PatronDrop() {
 
       <main className="pd-main">
         {LIVE && isTestnet && <div className="pd-tn" role="note"><b>TESTNET</b> Test network. Tokens have no real value.</div>}
-        <JapanNotice />
+        
         <section className="pd-card">
           <div className="pd-card-h"><h1>PATRON Edition 0</h1><p>$PATRON</p></div>
           <Art />

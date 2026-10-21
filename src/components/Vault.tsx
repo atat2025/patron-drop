@@ -4,7 +4,7 @@ import { formatEther, parseEther, type Address } from "viem";
 import * as S from "@/lib/strategyVaults";
 import { NET, isTestnet, explorerTx, explorerAddr } from "@/lib/network";
 import { useSeiUsd, usdSei } from "@/lib/seiUsd";
-import { JapanNotice, ResidencyCheck, useResidency } from "@/lib/residency";
+import { ResidencyCheck, useResidency } from "@/lib/residency";
 
 /* PATRON Vault: real on-chain strategy vaults (PatronStrategyVault) on the PATRON Edition 0 curve.
    NAV, trades and charts are read from the contracts; the keeper log (reasons + tx links) comes from the keeper job. */
@@ -177,7 +177,7 @@ export default function VaultPage({ home = "", drop = "../" }: { home?: string; 
       </header>
       <main className="pv-main">
         {isTestnet && <div className="pd-tn" role="note"><b>TESTNET</b> Test network. Tokens have no real value.</div>}
-        <JapanNotice />
+        
         <section className="pd-card pv-hero">
           <div className="pd-card-h"><h1>PATRON Vault</h1><p>Deposit SEI, pick a strategy, it trades automatically</p></div>
           <span className="pd-chip">{NET.label}</span>

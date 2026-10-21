@@ -3,7 +3,7 @@ import * as V from "./vaultChain";
 
 /** GaugeConfig on Sei testnet (Sourcify verified). Owner-signed stages + operator manual amount with on-chain history. */
 export const GAUGE = (process.env.NEXT_PUBLIC_GAUGE_CONFIG || "0x38d8C9808B838414d937384D90Dc337635E13D69") as Address;
-/** SEI→JPY rate used to value PAT (PROVISIONAL / 仮). */
+/** SEI→JPY rate used to value PAT (PROVISIONAL). */
 export const SEI_JPY = Number(process.env.NEXT_PUBLIC_SEI_JPY || "50");
 const FALLBACK_STAGES = (process.env.NEXT_PUBLIC_GAUGE_STAGES || "300000000,500000000").split(",").map(Number);
 

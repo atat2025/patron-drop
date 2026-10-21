@@ -35,21 +35,21 @@ export default function GaugeAdmin() {
       </header>
       <main className="pd-main">
         <div className="pd-card"><div className="pd-card-h"><h1>Gauge admin</h1><p>GaugeConfig · Sei testnet</p></div></div>
-        <div className="pd-info">Only the contract owner can sign updates. Every change is recorded on-chain and shown publicly as change history. The operator-added amount is always shown separately as 「運営による追加分」.
+        <div className="pd-info">Only the contract owner can sign updates. Every change is recorded on-chain and shown publicly as change history. The operator-added amount is always shown separately as the operator-added amount.
           <br /><small>Contract <a href={`https://seitrace.com/address/${GAUGE}?chain=atlantic-2`} target="_blank" rel="noreferrer">{GAUGE.slice(0, 10)}…</a> · owner {d?.owner ? d.owner.slice(0, 10) + "…" : "—"}</small></div>
-        {me && !isOwner && <div className="kl-err">This wallet is not the owner. 更新できるのはオーナーのウォレットのみです。</div>}
+        {me && !isOwner && <div className="kl-err">This wallet is not the owner.</div>}
         <div className="dm-g ad">
-          <div className="dm-h"><span>ステージ（円・昇順・カンマ区切り）</span></div>
+          <div className="dm-h"><span>Stages (JPY, ascending, comma-separated)</span></div>
           <input value={stages} onChange={(e) => setStages(e.target.value)} placeholder="300000000,500000000" />
           <small>{stages.split(",").filter(Boolean).map((x) => yen(Number(x.replace(/[^\d]/g, "")))).join(" / ")}</small>
           <button className="pd-buy" disabled={!isOwner || busy} onClick={() => run("setStages")}>Sign: update stages</button>
         </div>
         <div className="dm-g ad">
-          <div className="dm-h"><span>運営による追加分（円）</span><small>現在 {d ? yen(d.manualJPY) : "—"}</small></div>
+          <div className="dm-h"><span>Operator-added amount (JPY)</span><small>Current {d ? yen(d.manualJPY) : "—"}</small></div>
           <input value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="0" inputMode="numeric" />
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="メモ（公開されます）e.g. OTC commitment from ○○" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Public note, e.g. OTC commitment from …" />
           <button className="pd-buy" disabled={!isOwner || busy || !note} onClick={() => run("setManualAmount")}>Sign: update operator amount</button>
-          <small>A public note is required. メモは公開ページに表示されます。</small>
+          <small>A public note is required.</small>
         </div>
         {msg && <div className={msg.ok ? "dm-g" : "kl-err"}>{msg.t}</div>}
         <h3 className="ad-h">Public preview</h3>
