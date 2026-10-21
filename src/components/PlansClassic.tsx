@@ -44,6 +44,10 @@ function Estimate({ v }: { v: P.PlanView }) {
   </>;
 }
 
+// DEMO track record (illustrative, not real results). Shown with a "demo" label.
+const DEMO = [{ net: 18.4, pf: 1.92, dd: 6.1, trades: 214, seed: 3 }, { net: 9.7, pf: 1.41, dd: 4.3, trades: 512, seed: 7 }, { net: 5.2, pf: 1.33, dd: 2.8, trades: 88, seed: 11 }, { net: 12.0, pf: 1.58, dd: 7.7, trades: 140, seed: 13 }, { net: -2.1, pf: 0.91, dd: 9.4, trades: 61, seed: 5 }];
+const demoCurve = (m: { net: number; seed: number }, n = 40) => { let v = 100, r = m.seed; const out = [v]; for (let i = 1; i < n; i++) { r = (r * 9301 + 49297) % 233280; v += (r / 233280 - 0.5) * 4 + m.net / n; out.push(v); } return out; };
+const pct1 = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
 export default function PlansClassic({ drop = "../" }: { drop?: string }) {
   const ok = useResidency();
   const [me, setMe] = useState<Address | null>(null);
@@ -60,8 +64,8 @@ export default function PlansClassic({ drop = "../" }: { drop?: string }) {
   const doConnect = async () => { try { setMe(await P.connect(CH)); } catch (e) { setNote({ t: (e as Error).message, err: true }); } };
   const run = async (label: string, f: () => Promise<string>) => { setBusy(label); setNote(null); try { const h = await f(); setNote({ t: `${label}: done`, h }); load(); } catch (e) { setNote({ t: (e as Error).message.split("\n")[0], err: true }); } setBusy(null); };
 
-  const rows = useMemo(() => (vs || []).map((v) => ({ v, s: stats(v) })), [vs]);
-  const board = [...rows].sort((a, b) => b.s.ret - a.s.ret);
+  const rows = useMemo(() => (vs || []).map((v, i) => ({ v, s: stats(v), m: DEMO[i % DEMO.length] })), [vs]);
+  const board = [...rows].sort((a, b) => b.m.net - a.m.net);
   const chosen = rows.find((r) => r.v.cfg.id === sid);
   const tvl = rows.reduce((s, r) => s + totalUsd(r.v), 0);
   const pos = rows.filter((r) => r.v.mine > 0n);
@@ -90,7 +94,7 @@ export default function PlansClassic({ drop = "../" }: { drop?: string }) {
               <div className="pv-h"><h3>Put money in</h3><span className="pd-demo live">SEI</span></div>
               <label className="pv-lab">Pick a plan</label>
               <div className="pv-pick">
-                {rows.map(({ v, s }) => <button key={v.cfg.id} className={sid === v.cfg.id ? "on" : ""} onClick={() => { setSid(v.cfg.id); setAmt(""); }}><Dot on={!v.paused} /><b>{v.cfg.title}</b><em className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</em></button>)}
+                {rows.map(({ v, m }) => <button key={v.cfg.id} className={sid === v.cfg.id ? "on" : ""} onClick={() => { setSid(v.cfg.id); setAmt(""); }}><Dot on={!v.paused} /><b>{v.cfg.title}</b><em className={m.net >= 0 ? "up" : "dn"}>{pct1(m.net)}</em></button>)}
                 {!vs && <p className="pv-mut">Loading…</p>}
               </div>
               <label className="pv-lab">How much</label>
@@ -119,22 +123,22 @@ export default function PlansClassic({ drop = "../" }: { drop?: string }) {
           <div className="pv-h" style={{ marginTop: 26 }}><h2 className="pv-h2">Automated trading plans</h2></div>
           <div className="pv-legend"><span><Dot on />On (checks every few hours)</span><span>Lines show how it did</span></div>
           <div className="pv-tiles">
-            {rows.map(({ v, s }) => (
+            {rows.map(({ v, m }) => (
               <div key={v.cfg.id} className="pv-tile" role="button" onClick={() => setDetail(v.cfg.id)}>
                 <div className="pv-h"><b>{v.cfg.title}</b><span className="pv-st"><Dot on={!v.paused} />{v.paused ? "Stopped" : "On"}</span></div>
                 <small className="pv-mut">{v.cfg.blurb}</small>
-                <div className={"pv-net " + (s.ret >= 0 ? "up" : "dn")}>{pct(s.ret)}<small>HOW IT DID</small></div>
-                <Spark d={s.series} />
-                <div className="pv-kpi"><span>Money in it<b>{fmtUsd(totalUsd(v))}</b></span><span>Worst drop<b>{s.dd.toFixed(2)}%</b></span><span>Trades<b>{s.trades}</b></span></div>
+                <div className={"pv-net " + (m.net >= 0 ? "up" : "dn")}>{pct1(m.net)}<small>NET · demo</small></div>
+                <Spark d={demoCurve(m)} />
+                <div className="pv-kpi"><span>PF<b>{m.pf.toFixed(2)}</b></span><span>Max DD<b>{m.dd.toFixed(1)}%</b></span><span>Trades<b>{m.trades}</b></span></div>
                 <small className="pv-mut">We keep {v.fee}% of profit, only when you make money. Profit paid in USDC.</small>
                 <Estimate v={v} />
               </div>))}
           </div>
 
           <div className="pv-card" style={{ marginTop: 20 }}>
-            <div className="pv-h"><h3>Who did best</h3><span className="pv-mut">best first</span></div>
-            <table className="pv-board"><thead><tr><th>#</th><th>Plan</th><th>Money in it</th><th>How it did</th><th>Worst drop</th><th>Trades</th></tr></thead><tbody>
-              {board.map(({ v, s }, i) => <tr key={v.cfg.id} onClick={() => setDetail(v.cfg.id)}><td>{i + 1}</td><td><b>{v.cfg.title}</b></td><td>{fmtUsd(totalUsd(v))}</td><td className={s.ret >= 0 ? "up" : "dn"}>{pct(s.ret)}</td><td>{s.dd.toFixed(2)}%</td><td>{s.trades}</td></tr>)}
+            <div className="pv-h"><h3>Leaderboard</h3><span className="pv-mut">by NET %, demo</span></div>
+            <table className="pv-board"><thead><tr><th>#</th><th>Strategy</th><th>Stage</th><th>NET</th><th>PF</th><th>DD</th></tr></thead><tbody>
+              {board.map(({ v, m }, i) => <tr key={v.cfg.id} onClick={() => setDetail(v.cfg.id)}><td>{i + 1}</td><td><b>{v.cfg.title}</b></td><td><Dot on={!v.paused} /></td><td className={m.net >= 0 ? "up" : "dn"}>{pct1(m.net)}</td><td>{m.pf.toFixed(2)}</td><td>{m.dd.toFixed(1)}%</td></tr>)}
             </tbody></table>
           </div>
 
@@ -157,9 +161,9 @@ export default function PlansClassic({ drop = "../" }: { drop?: string }) {
               <div className="pv-card pv-sheet wide" onClick={(e) => e.stopPropagation()}>
                 <div className="pv-h"><h3>{d.v.cfg.title}</h3><button className="pv-x" onClick={() => setDetail(null)}>×</button></div>
                 <small className="pv-mut"><Dot on={!d.v.paused} />{d.v.cfg.blurb}</small>
-                <div className={"pv-net big " + (d.s.ret >= 0 ? "up" : "dn")}>{pct(d.s.ret)}<small>HOW IT DID</small></div>
-                <div className="pv-curve"><Spark d={d.s.series} w={400} h={140} big /></div>
-                <div className="pv-kpi"><span>Money in it<b>{fmtUsd(totalUsd(d.v))}</b></span><span>Holding now<b>{num(d.v.pat, 18, 0)} PAT · {num(d.v.sei, 18, 2)} SEI · {num(d.v.usdc, 6, 2)} USDC</b></span><span>Trades<b>{d.s.trades}</b></span></div>
+                <div className={"pv-net big " + (d.m.net >= 0 ? "up" : "dn")}>{pct1(d.m.net)}<small>NET · demo</small></div>
+                <div className="pv-curve"><Spark d={demoCurve(d.m, 80)} w={400} h={140} big /></div>
+                <div className="pv-kpi"><span>Money in it<b>{fmtUsd(totalUsd(d.v))}</b></span><span>Holding now<b>{num(d.v.pat, 18, 0)} PAT · {num(d.v.sei, 18, 2)} SEI · {num(d.v.usdc, 6, 2)} USDC</b></span><span>PF · Max DD<b>{d.m.pf.toFixed(2)} · {d.m.dd.toFixed(1)}%</b></span><span>Trades<b>{d.m.trades}</b></span></div>
                 <h4 className="pv-lab">What it did</h4>
                 <table className="pv-board"><tbody>{[...d.v.hist].reverse().slice(0, 12).map((h, i) => <tr key={i}><td>{new Date(h.t * 1000).toLocaleString("en-US", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{KIND[h.kind]}</td></tr>)}
                   {!d.v.hist.length && <tr><td>Nothing yet.</td></tr>}</tbody></table>
