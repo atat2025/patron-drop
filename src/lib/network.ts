@@ -28,13 +28,13 @@ const NETS: Record<NetName, NetConfig> = {
     name: "mainnet", label: "MAINNET", chainId: 1329, chainName: "Sei",
     rpc: "https://evm-rpc.sei-apis.com", explorer: "https://seitrace.com", explorerChain: "pacific-1", seiscan: "https://seiscan.io",
     // Filled after `forge script script/DeployMainnetDrop.s.sol` (patron-perp/contracts). Empty = feature off.
-    market: "", // PatronMarket (Edition 0 curve)
-    token: "", // PATRON Edition 0 token minted by the market
-    marketFromBlock: 0n, // deploy block (chart index start)
+    market: "0x9d65dCb24B55f5227E7AdA81bdEf80a54570623b", // PatronMarket (Edition 0 curve)
+    token: "0xc5D5D8a32AD707A10e340a666822BB615a220a75", // PATRON Edition 0 token minted by the market
+    marketFromBlock: 238880090n, // deploy block (chart index start)
     vaults: [
-      { id: "momentum", address: "" },
-      { id: "meanrev", address: "" },
-      { id: "dca", address: "" },
+      { id: "momentum", address: "0x085a614F85283F284699ae78eD963f777c7617A6" },
+      { id: "meanrev", address: "0xa2273EbB4B594fEE90e0A0172e2dA3Ad73b6a974" },
+      { id: "dca", address: "0xe692187a6b015f56Fc44F05530Afb5d6964124E0" },
     ].filter((v) => v.address),
     dataUrl: "", // e.g. https://raw.githubusercontent.com/atat2025/patron-drop/data-mainnet (keeper output)
   },
