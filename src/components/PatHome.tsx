@@ -32,7 +32,7 @@ export default function PatHome() {
   return (
     <div className="pd">
       <header className="pd-top">
-        <a className="pd-brand" href={EXT}><Mustache size={22} /><span>patron<i>_</i></span></a>
+        <a className="pd-brand" href={EXT}><span>patron<i>_</i></span></a>
         <div className="pd-actions"><span className="pd-demo live">SEI</span>
           <button className="pd-wallet" onClick={doConnect}>{me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "Connect Wallet"}</button></div>
       </header>

@@ -74,7 +74,7 @@ export default function PlansClassic({ drop = "../" }: { drop?: string }) {
   return (
     <div className="pd">
       <header className="pd-top">
-        <a className="pd-brand" href={drop}><Mustache size={22} /><span>patron<i>_</i></span></a>
+        <a className="pd-brand" href={drop}><span>patron<i>_</i></span></a>
         <div className="pd-actions"><button className="pd-wallet" onClick={doConnect}>{me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "Connect wallet"}</button></div>
       </header>
       <main className="pv-main">

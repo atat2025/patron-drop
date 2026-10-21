@@ -81,7 +81,7 @@ export default function PatCurvePage({ drop = "../", panel, start = "buy", onDon
   return (
     <div className="pd">
       <header className="pd-top">
-        <a className="pd-brand" href={drop}><Mustache size={22} /><span>patron<i>_</i></span></a>
+        <a className="pd-brand" href={drop}><span>patron<i>_</i></span></a>
         <div className="pd-actions"><span className="pd-demo live">SEI</span>
           <button className="pd-wallet" onClick={async () => { try { setMe(await connect()); } catch (e) { setMsg({ ok: false, t: (e as Error).message }); } }}>{me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "Connect"}</button></div>
       </header>

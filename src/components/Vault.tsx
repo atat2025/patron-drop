@@ -172,7 +172,7 @@ export default function VaultPage({ home = "", drop = "../" }: { home?: string; 
   return (
     <div className="pd">
       <header className="pd-top">
-        <a className="pd-brand" href={drop}><Mustache size={22} /><span>patron<i>_</i></span></a>
+        <a className="pd-brand" href={drop}><span>patron<i>_</i></span></a>
         <div className="pd-actions"><span className="pd-demo live">{NET.label}</span><a className="pd-wallet" href={drop}>PATRON</a></div>
       </header>
       <main className="pv-main">

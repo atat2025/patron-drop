@@ -91,7 +91,7 @@ export default function PatronDrop() {
   return (
     <div className={"pd" + (embed ? " embed" : "")}>
       {!embed && <header className="pd-top">
-        <a className="pd-brand" href={EXT || "#"}><Mustache size={22} /><span>patron<i>_</i></span></a>
+        <a className="pd-brand" href={EXT || "#"}><span>patron<i>_</i></span></a>
         <div className="pd-actions">
           <span className={`pd-demo ${LIVE ? "live" : ""}`}>{TAG}</span>
           <span className="pd-burn">🔥 {st.redeemed}<span className="pd-hide"> redeemed</span></span>

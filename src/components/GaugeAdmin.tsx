@@ -29,7 +29,7 @@ export default function GaugeAdmin() {
   return (
     <div className="pd">
       <header className="pd-top">
-        <Link className="pd-brand" href="/"><Mustache size={22} /><span>patron<i>_</i></span></Link>
+        <Link className="pd-brand" href="/"><span>patron<i>_</i></span></Link>
         <div className="pd-actions"><span className="pd-demo live">TESTNET · ADMIN</span>
           <button className="pd-wallet" onClick={() => V.connect().then(setMe).catch((e) => setMsg({ ok: false, t: e.message }))}>{me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "Connect Wallet"}</button></div>
       </header>
