@@ -7,6 +7,7 @@ export default function SiteFooter() {
         <Link href="/">PATRON</Link>
         <Link href="/pat/">Buy PAT</Link>
         <Link href="/vault/">Automated trading</Link>
+        <Link href="/perp/">PERP</Link>
         <Link href="/bridge/">Bridge</Link>
       </nav>
       <p>© PATRON · Sei</p>

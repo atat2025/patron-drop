@@ -17,8 +17,9 @@ type Tab = "SPOT" | "PERP" | "PATRON";
 const fp = (x: number) => !x ? "—" : x >= 1000 ? x.toLocaleString("en-US", { maximumFractionDigits: 2 }) : x >= 1 ? x.toFixed(3) : x < 0.001 ? x.toExponential(3) : x.toFixed(5);
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
-export default function Exchange() {
+export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = {}) {
   const [tab, setTab] = useState<Tab>("PERP");
+  const canTrade = !!config.clientId;
   const [mk, setMk] = useState<Record<"SPOT" | "PERP", { markets: Market[]; live: boolean } | null>>({ SPOT: null, PERP: null });
   const [sel, setSel] = useState("");
   const [book, setBook] = useState<Book | null>(null);
@@ -86,11 +87,12 @@ export default function Exchange() {
         await eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: "0x530", chainName: "Sei Testnet (atlantic-2)", nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: [config.seiRpcUrl], blockExplorerUrls: ["https://seitrace.com"] }] }).catch(() => {});
         await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x530" }] }).catch(() => {});
       }
-      const a = await connectWallet(); setAddr(a); flash(true, "Signed in to Monaco (" + config.network + ")");
+      const a = await connectWallet(); setAddr(a); flash(true, canTrade ? "Signed in to Monaco" : "Wallet connected. Trading opens soon.");
     } catch (e) { flash(false, (e as Error).message.split("\n")[0]); }
   };
   const submit = async () => {
     if (!m) return; if (!addr) return connect();
+    if (!canTrade) return flash(false, "Trading opens soon. Prices are live.");
     setBusy(true);
     try { flash(true, await placeOrder({ market: m, mode, side, type: otype, quantity: qty, price: otype === "LIMIT" ? price : undefined, leverage: lev })); refreshAcct(); }
     catch (e) { flash(false, (e as Error).message.split("\n")[0]); }
@@ -119,9 +121,9 @@ export default function Exchange() {
       </header>
       <main className="ux-main">
         <div className="ux-head">
-          <h1>PATRON Powered by Monaco</h1>
-          <div className="ux-seg">{(["SPOT", "PERP", "PATRON"] as Tab[]).map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSel(""); }}>{t}</button>)}</div>
-          {tab !== "PATRON" && <span className={"ux-pill " + (live ? "ok" : "")}>{live === undefined ? "Loading…" : live ? "Live · Monaco " + config.network : "Monaco unavailable · sample"}</span>}
+          <h1>{perpOnly ? "PERP" : "PATRON Powered by Monaco"}</h1>
+          {!perpOnly && <div className="ux-seg">{(["SPOT", "PERP", "PATRON"] as Tab[]).map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSel(""); }}>{t}</button>)}</div>}
+          {tab !== "PATRON" && <span className={"ux-pill " + (live ? "ok" : "")}>{live === undefined ? "Loading…" : live ? (perpOnly ? "Live prices · Monaco" : "Live · Monaco " + config.network) : config.network === "mainnet" ? "Monaco unavailable" : "Monaco unavailable · sample"}</span>}
         </div>
 
         {tab === "PATRON" ? (
@@ -152,8 +154,9 @@ export default function Exchange() {
               {otype === "LIMIT" && <label className="ux-inp"><span>Price</span><input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={fp(last)} inputMode="decimal" /><em>{m?.quote}</em></label>}
               <label className="ux-inp"><span>Size</span><input value={qty} onChange={(e) => setQty(e.target.value)} placeholder="0.0" inputMode="decimal" /><em>{m?.base}</em></label>
               {tab === "PERP" && <label className="ux-inp"><span>Leverage</span><select value={lev} onChange={(e) => setLev(e.target.value)}>{[1, 2, 3, 5, 10, 20].map((l) => <option key={l} value={l}>{l}x</option>)}</select></label>}
-              <button className="pd-buy" disabled={busy || (!!addr && (!qty || (otype === "LIMIT" && !price)))} onClick={submit}>{!addr ? "Connect Wallet" : busy ? "Waiting…" : `${side === "BUY" ? (tab === "PERP" ? "Long" : "Buy") : (tab === "PERP" ? "Short" : "Sell")} ${m?.base ?? ""}`}</button>
-              <p className="ux-mut">Orders are signed by your own wallet session on Monaco {config.network}. {config.network !== "mainnet" && "Testnet funds only."}</p>
+              {perpOnly && !canTrade && <div className="pd-err" style={{ margin: "6px 0" }}>Trading opens soon. Prices, chart and order book are live from Monaco.</div>}
+              <button className="pd-buy" disabled={(!!addr && !canTrade) || busy || (!!addr && (!qty || (otype === "LIMIT" && !price)))} onClick={submit}>{!addr ? "Connect Wallet" : busy ? "Waiting…" : `${side === "BUY" ? (tab === "PERP" ? "Long" : "Buy") : (tab === "PERP" ? "Short" : "Sell")} ${m?.base ?? ""}`}</button>
+              <p className="ux-mut">{tab === "PERP" ? "Long = you win if the price goes up. Short = you win if it goes down. Leverage multiplies wins and losses. " : ""}Orders are signed by your own wallet. {config.network !== "mainnet" && "Testnet funds only."}</p>
             </section>
 
             <section className="ux-card ux-book">
@@ -172,7 +175,7 @@ export default function Exchange() {
 
             <section className="ux-card ux-acct">
               <div className="ux-ph"><h2>Account</h2>{addr && <button className="ux-link" onClick={refreshAcct}>Refresh</button>}</div>
-              {!addr ? <p className="ux-mut">Connect your wallet to deposit, trade and see balances, orders and positions.</p> : <>
+              {!addr ? <p className="ux-mut">Connect your wallet to deposit, trade and see balances, orders and positions.</p> : !canTrade ? <p className="ux-mut">Wallet connected. Deposits and trading open soon.</p> : <>
                 <div className="ux-dep">
                   <select value={depA} onChange={(e) => setDepA(e.target.value)}>{assets.map((a) => <option key={a.assetId} value={a.assetId}>{a.symbol}</option>)}</select>
                   <input value={depAmt} onChange={(e) => setDepAmt(e.target.value)} placeholder="Amount" inputMode="decimal" />
@@ -189,10 +192,10 @@ export default function Exchange() {
             </section>
           </div>
         )}
-        <div className="ux-cards">
+        {!perpOnly && <div className="ux-cards">
           <Link href="/stocks" className="mk-c"><b>Personal Stock Market</b><em>Coming Soon</em></Link>
           <button className="mk-c live" onClick={() => setTab("PATRON")}><b>PATRON</b><em>Price · Staking · Deposit →</em></button>
-        </div>
+        </div>}
       </main>
       {toast && <div className="pd-toast" style={{ background: toast.ok ? undefined : "#c00" }}>{toast.t}</div>}
     </div>

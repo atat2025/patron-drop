@@ -11,7 +11,7 @@ let publicSdk: MonacoSDK | null = null;
 let userSdk: MonacoSDK | null = null;
 
 function getPublicSdk() {
-  if (!publicSdk) publicSdk = new MonacoSDK({ network: config.network, seiRpcUrl: config.seiRpcUrl });
+  if (!publicSdk) publicSdk = new MonacoSDK({ network: config.network, seiRpcUrl: config.seiRpcUrl, ...(config.apiUrl ? { apiUrl: config.apiUrl, wsUrl: config.wsUrl } : {}) });
   return publicSdk;
 }
 export function getUserSdk() { return userSdk; }
@@ -54,7 +54,7 @@ export async function loadCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h
       .filter((c) => [c.o, c.h, c.l, c.c].every(Number.isFinite) && c.h > 0)
       .sort((a, b) => a.t - b.t)
       .slice(-120);
-  } catch { return mockCandles(m.price || 1); }
+  } catch { return config.network === "mainnet" ? [] : mockCandles(m.price || 1); }
 }
 
 // Recent trades: derived from mock until a public trades endpoint/WS subscription is wired (see README TODO)
@@ -64,8 +64,12 @@ export async function connectWallet(): Promise<string> {
   const eth = (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
   if (!eth) throw new Error("No wallet found (please install MetaMask or similar)");
   const [account] = (await eth.request({ method: "eth_requestAccounts" })) as `0x${string}`[];
+  if (config.network === "mainnet") {
+    const hex = "0x531";
+    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] }).catch(() => eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: hex, chainName: "Sei", nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: [config.seiRpcUrl], blockExplorerUrls: ["https://seiscan.io"] }] }));
+  }
   const walletClient = createWalletClient({ account, chain: config.network === "mainnet" ? sei : seiTestnet, transport: custom(eth) });
-  userSdk = new MonacoSDK({ walletClient, network: config.network, seiRpcUrl: config.seiRpcUrl });
+  userSdk = new MonacoSDK({ walletClient, network: config.network, seiRpcUrl: config.seiRpcUrl, ...(config.apiUrl ? { apiUrl: config.apiUrl, wsUrl: config.wsUrl } : {}) });
   if (config.clientId) await userSdk.login(config.clientId);
   return account;
 }
@@ -156,7 +160,7 @@ export async function loadMarketsByType(type: "SPOT" | "MARGIN"): Promise<{ mark
     if (!ps.length) throw new Error("no markets");
     return { markets: ps.map((p: TradingPair) => { const x = p as TradingPair & { lastPrice?: string; priceChangePercent24h?: string };
       return { id: p.id, symbol: p.symbol, base: p.baseToken, quote: p.quoteToken, price: Number(x.lastPrice ?? 0), change24h: Number(x.priceChangePercent24h ?? 0) }; }), live: true };
-  } catch { return { markets: type === "MARGIN" ? MOCK_MARKETS : MOCK_MARKETS.map((m) => ({ ...m, id: m.id + "-spot", symbol: `${m.base}/${m.quote}` })), live: false }; }
+  } catch { if (config.network === "mainnet") return { markets: [], live: false }; return { markets: type === "MARGIN" ? MOCK_MARKETS : MOCK_MARKETS.map((m) => ({ ...m, id: m.id + "-spot", symbol: `${m.base}/${m.quote}` })), live: false }; }
 }
 export async function loadBookMode(m: Market, mode: "SPOT" | "MARGIN"): Promise<Book> {
   if (m.mock) return mockBook(m.price || 1);
@@ -164,7 +168,7 @@ export async function loadBookMode(m: Market, mode: "SPOT" | "MARGIN"): Promise<
     const ob = await withTimeout(getPublicSdk().orderbook.getOrderbook(m.id, { tradingMode: mode }));
     const map = (l: { price: string; quantity: string }) => ({ price: Number(l.price), size: Number(l.quantity) });
     return { bids: ob.bids.slice(0, 12).map(map), asks: ob.asks.slice(0, 12).map(map) };
-  } catch { return mockBook(m.price || 1); }
+  } catch { return config.network === "mainnet" ? { bids: [], asks: [] } : mockBook(m.price || 1); }
 }
 
 /* ---------- Live trading helpers (visitor's own wallet signs; staging = Sei testnet) ---------- */
