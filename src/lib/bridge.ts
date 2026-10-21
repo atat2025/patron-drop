@@ -27,10 +27,15 @@ export const pub = { rh: createPublicClient({ chain: robinhood, transport: http(
 /** OFT shared decimals = 6, so amounts are rounded down to 1e12 wei (dust). */
 export const dust = (v: bigint) => v - (v % 10n ** 12n);
 
+/** Interim: enforced lzReceive gas is 80,000 on both sides; a first-time receiver on Sei needs ~92k (Sei storage is pricier).
+ *  LayerZero ADDS these extraOptions to the enforced ones: RH->Sei +120,000 (=200k total), Sei->RH +20,000 (=100k total).
+ *  Type-3 executor lzReceive option: 0x0003 | 01 | 0011 | 01 | uint128 gas. Set to "0x" once the owner raises enforced options. */
+const lzGas = (g: number) => ("0x000301001101" + g.toString(16).padStart(32, "0")) as `0x${string}`;
+const EXTRA: Record<Side, `0x${string}`> = { rh: lzGas(120_000), sei: lzGas(20_000) };
+
 export function sendParam(src: Side, to: Address, amount: bigint) {
   const a = dust(amount);
-  // extraOptions empty: the enforced options set on both contracts (lzReceive 80,000 gas) are applied automatically.
-  return { dstEid: SIDES[other(src)].eid, to: padHex(to, { size: 32 }), amountLD: a, minAmountLD: a, extraOptions: "0x" as `0x${string}`, composeMsg: "0x" as `0x${string}`, oftCmd: "0x" as `0x${string}` };
+  return { dstEid: SIDES[other(src)].eid, to: padHex(to, { size: 32 }), amountLD: a, minAmountLD: a, extraOptions: EXTRA[src], composeMsg: "0x" as `0x${string}`, oftCmd: "0x" as `0x${string}` };
 }
 export const balance = (s: Side, a: Address) => pub[s].readContract({ address: SIDES[s].token, abi: erc20, functionName: "balanceOf", args: [a] });
 export const gasBalance = (s: Side, a: Address) => pub[s].getBalance({ address: a });
