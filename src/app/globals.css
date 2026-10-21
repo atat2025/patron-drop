@@ -369,6 +369,7 @@ a.mkp-row:hover{background:#fffaf2}
 .sn-theme{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:1px solid #ebe6da;background:transparent;color:#111;display:flex;align-items:center;justify-content:center;cursor:pointer}
 @media (max-width:760px){.sn-theme{margin-left:auto}.sn-burger{margin-left:4px}}
 .sn-float{position:fixed;top:10px;right:10px;z-index:60}
+.cs-hero{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-top:12px}
 /* ==== DARK THEME (generated) ==== */
 html[data-theme="dark"] .pd{background:#10151e;color:#f3f5f7}
 html[data-theme="dark"] .pd-brand{color:var(--pd-red)}
