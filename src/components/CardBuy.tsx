@@ -60,7 +60,7 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
     <ol className="cb-steps">{STEPS.map(([, l], i) => <li key={l} className={i < idx ? "ok" : i === idx ? "on" : ""}><b>{i < idx ? "✓" : i + 1}</b>{l}</li>)}</ol>
 
     {step === "quote" && <>
-      <em>Item: <b>$PATRON (PATRON Edition 0)</b></em>
+      <em>Item: <b>$PATRON</b></em>
       <div className="pd-card-f cb-n"><div><b>{n} PATRON</b><small>you receive</small></div>
         <div className="pd-step"><button onClick={() => setN(Math.max(1, n - 1))}>-</button><span>{n}</span><button onClick={() => setN(Math.min(max, n + 1))}>+</button></div></div>
       <dl className="pd-dl">
@@ -92,7 +92,7 @@ export default function CardBuy({ addr, connect, max, onDone }: { addr: string |
 
     {step === "done" && rcpt && <>
       <div className="cb-rcpt"><small>Receipt</small><b>{rcpt.got} PATRON</b><span>received</span></div>
-      <dl className="pd-dl"><dt>Item</dt><dd>$PATRON (Edition 0)</dd><dt>SEI paid</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>Card payment</dt><dd>via Transak (receipt by email)</dd><dt>Wallet</dt><dd><a onClick={() => chain.watchPatron()}>Show PATRON in wallet ↗</a></dd><dt>Transaction</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">View on explorer ↗</a></dd></dl>
+      <dl className="pd-dl"><dt>Item</dt><dd>$PATRON</dd><dt>SEI paid</dt><dd>{f4(rcpt.sei)} SEI</dd><dt>Card payment</dt><dd>via Transak (receipt by email)</dd><dt>Wallet</dt><dd><a onClick={() => chain.watchPatron()}>Show PATRON in wallet ↗</a></dd><dt>Transaction</dt><dd><a href={chain.explorerTx(rcpt.hash)} target="_blank" rel="noreferrer">View on explorer ↗</a></dd></dl>
     </>}
     {err && <div className="pd-err">{err}</div>}
   </div>;

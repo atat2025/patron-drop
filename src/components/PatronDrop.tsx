@@ -103,7 +103,7 @@ export default function PatronDrop() {
         {LIVE && isTestnet && <div className="pd-tn" role="note"><b>TESTNET</b> Test network. Tokens have no real value.</div>}
         
         <section className="pd-card">
-          <div className="pd-card-h"><h1>PATRON Edition 0</h1><p>$PATRON</p></div>
+          <div className="pd-card-h"><h1>PATRON</h1><p>$PATRON</p></div>
           <Art />
           <div className="pd-card-f">
             <div><b><Px v={price} />{LIVE ? "" : " USD"}</b><small>{st.pool}/{SUPPLY} available</small></div>
