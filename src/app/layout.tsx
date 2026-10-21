@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import SiteFooter from "@/components/SiteFooter";
+import SiteNav from "@/components/SiteNav";
 
 const dm = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-dm" });
 import { SITE_URL } from "../site.config.mjs";
@@ -16,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="en" translate="no" className={`${dm.variable} notranslate`}><head><meta name="google" content="notranslate" /></head><body>{children}<SiteFooter /></body></html>;
+  return <html lang="en" translate="no" className={`${dm.variable} notranslate`}><head><meta name="google" content="notranslate" /></head><body><SiteNav />{children}<SiteFooter /></body></html>;
 }
