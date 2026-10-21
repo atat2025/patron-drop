@@ -8,7 +8,7 @@ export default function ComingSoon({ title, sub }: { title: string; sub: string 
         <section className="pd-card cs-card"><div className="pd-card-h"><h1>{title}</h1><p>COMING SOON</p></div>
           <div className="cs-art"><Mustache size={120} /></div></section>
         <div className="pd-info">{sub}</div>
-        <Link className="pd-buy cs-btn" href="/exchange">Go to PATRON Exchange</Link>
+        <Link className="pd-buy cs-btn" href="/">Back to PATRON</Link>
       </main>
     </div>
   );
