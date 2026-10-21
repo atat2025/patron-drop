@@ -26,7 +26,7 @@ const NETS: Record<NetName, NetConfig> = {
   },
   mainnet: {
     name: "mainnet", label: "MAINNET", chainId: 1329, chainName: "Sei",
-    rpc: "https://evm-rpc.sei-apis.com", explorer: "https://seitrace.com", explorerChain: "pacific-1", seiscan: "https://seiscan.io",
+    rpc: "https://evm-rpc.sei-apis.com", explorer: "https://seiscan.io", explorerChain: "pacific-1", seiscan: "https://seiscan.io",
     // Filled after `forge script script/DeployMainnetDrop.s.sol` (patron-perp/contracts). Empty = feature off.
     market: "0x9d65dCb24B55f5227E7AdA81bdEf80a54570623b", // PatronMarket (Edition 0 curve)
     token: "0xc5D5D8a32AD707A10e340a666822BB615a220a75", // PATRON Edition 0 token minted by the market
