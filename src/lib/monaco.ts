@@ -47,7 +47,7 @@ export async function loadBook(m: Market): Promise<Book> {
 
 /** Where the shown chart came from, per market id: "monaco" or a reference feed when Monaco has too few trades. */
 export const candleSource: Record<string, string> = {};
-const IV_MS: Record<string, number> = { "1m": 60_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000 };
+const IV_MS: Record<string, number> = { "1m": 60_000, "3m": 180_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000, "1w": 604_800_000, "1M": 2_592_000_000 };
 async function hlCandles(base: string, interval = "1h"): Promise<Candle[]> {
   const end = Date.now(), start = end - 1000 * IV_MS[interval];
   for (const coin of [base, "xyz:" + base]) {
@@ -59,7 +59,7 @@ async function hlCandles(base: string, interval = "1h"): Promise<Candle[]> {
   return [];
 }
 const thin = (cs: Candle[]) => cs.length < 12 || new Set(cs.slice(-24).map((c) => c.c)).size < 4;
-export async function loadCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h" | "4h" | "1d" = "1h"): Promise<Candle[]> {
+export async function loadCandles(m: Market, interval: "1m" | "3m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1M" = "1h"): Promise<Candle[]> {
   if (m.mock) return mockCandles(m.price);
   if (config.network === "mainnet") {
     let cs: Candle[] = [];
@@ -71,9 +71,10 @@ export async function loadCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h
   }
   try { return await loadMonacoCandles(m, interval); } catch { return mockCandles(m.price || 1); }
 }
-async function loadMonacoCandles(m: Market, interval: "1m" | "5m" | "15m" | "1h" | "4h" | "1d"): Promise<Candle[]> {
+async function loadMonacoCandles(m: Market, interval: "1m" | "3m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1M"): Promise<Candle[]> {
   {
-    const cs = await withTimeout(getPublicSdk().market.getCandlesticks(m.id, interval));
+    if (!["1m", "5m", "15m", "1h", "4h", "1d"].includes(interval)) return [];
+    const cs = await withTimeout(getPublicSdk().market.getCandlesticks(m.id, interval as "1m"));
     return cs
       .map((c) => ({ t: c.T ?? c.t, o: +c.o, h: +c.h, l: +c.l, c: +c.c, v: +((c as { v?: string }).v ?? 0) }))
       .filter((c) => [c.o, c.h, c.l, c.c].every(Number.isFinite) && c.h > 0)
