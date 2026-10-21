@@ -6,3 +6,5 @@ out/
 *.zip
 node_modules
 *.tsbuildinfo
+out-main/
+out-test/

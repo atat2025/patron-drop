@@ -286,7 +286,7 @@ a.dm-g { display:block; color:#111; text-decoration:none; } .dm-g em { font-styl
 .pt-chk{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 10px}
 .pt-bs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pt-bs button{height:50px;border:0;border-radius:8px;color:#fff;font-weight:700;font-size:15px;letter-spacing:.03em;cursor:pointer}
-.pt-buy{background:linear-gradient(90deg,#1f9d6b,#3aa0ff)}.pt-sell{background:linear-gradient(90deg,#ff0047,#ff5c86)}
+.pt-buy{background:#3aa0ff;text-shadow:0 1px 2px rgba(0,0,0,.25)}.pt-sell{background:linear-gradient(90deg,#ff0047,#ff5c86)}
 .pt-note{font-size:12px;margin:8px 0 16px}
 .pt-meter{height:6px;background:#eee8da;border-radius:3px}.pt-meter i{display:block;height:100%;background:var(--dn);border-radius:3px}
 .pt-ctabs{margin-bottom:4px}
