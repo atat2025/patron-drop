@@ -114,7 +114,7 @@ export default function PerpTerminal() {
           {m && <Logo base={m.base} size={34} />}
           <span><b>{m ? m.symbol.replace("/", "") : "—"} ▾</b><small>Perpetual · {m ? (NAMES[m.base] ?? "").replace(/\s[^\x00-\x7F].*$/, "") : ""}</small></span>
         </button>
-        <div className="pt-px"><b style={{ color: "#3aa0ff" }}>{fp(last)}</b><small>{fp(stats?.mark ?? 0)}</small></div>
+        <div className="pt-px"><b className={chg >= 0 ? "up" : "dn"}>{fp(last)}</b><small>{fp(stats?.mark ?? 0)}</small></div>
         <div className="pt-stats">
           <div><span>Index</span><b>{fp(stats?.index ?? 0)}</b></div>
           <div><span>24h Change</span><b className={chg >= 0 ? "up" : "dn"}>{`${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%`}</b></div>
