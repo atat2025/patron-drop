@@ -164,6 +164,21 @@
     "get": "0.050076",
     "netProfit": "-0.024824"
    }
+  },
+  {
+   "t": "2026-10-22T20:45:16.460Z",
+   "action": "skip: prices in line",
+   "keeperSei": "5.436106",
+   "curvePrice": "0.185646",
+   "poolBid": "0.185930",
+   "poolAsk": "0.187051",
+   "best": {
+    "dir": "A",
+    "pat": "0.269329",
+    "spend": "0.050150",
+    "get": "0.050076",
+    "netProfit": "-0.024824"
+   }
   }
  ]
 }
