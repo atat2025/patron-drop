@@ -1,5 +1,6 @@
 import { createWalletClient, custom, formatEther, parseAbi, type Address, type EIP1193Provider } from "viem";
 import * as V from "./vaultChain";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 /** GaugeConfig on Sei testnet (Sourcify verified). Owner-signed stages + operator manual amount with on-chain history. */
 export const GAUGE = (process.env.NEXT_PUBLIC_GAUGE_CONFIG || "0x38d8C9808B838414d937384D90Dc337635E13D69") as Address;
@@ -48,7 +49,7 @@ export async function readGauge(): Promise<GaugeData> {
 
 export async function adminWrite(fn: "setStages" | "setManualAmount", args: readonly unknown[]) {
   const a = await V.connect();
-  const w = createWalletClient({ account: a, chain: V.CHAIN, transport: custom((window as unknown as { ethereum: EIP1193Provider }).ethereum) });
+  const w = createWalletClient({ account: a, chain: V.CHAIN, transport: custom(getEth()!) });
   const h = await w.writeContract({ address: GAUGE, abi: gaugeAbi, functionName: fn, args: args as never, account: a, chain: V.CHAIN, gas: 3_000_000n });
   const r = await V.pub.waitForTransactionReceipt({ hash: h });
   if (r.status !== "success") throw new Error("Transaction reverted");

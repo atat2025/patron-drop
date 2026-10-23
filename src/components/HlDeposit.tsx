@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { createPublicClient, createWalletClient, custom, encodeFunctionData, erc20Abi, formatUnits, http, parseUnits, type Address } from "viem";
 import { arbitrum } from "viem/chains";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 // Hyperliquid official Bridge2 on Arbitrum + native USDC (Circle). Min 5 USDC; credited to the SENDER's HL account in ~1 min.
 const BRIDGE = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7" as Address;
@@ -16,7 +17,7 @@ export default function HlDeposit({ onClose }: { onClose: () => void }) {
   const [amt, setAmt] = useState("10");
   const [msg, setMsg] = useState<{ ok: boolean; t: string; tx?: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const eth = () => (window as unknown as { ethereum?: Eth }).ethereum;
+  const eth = () => getEth() as unknown as Eth | undefined;
 
   const refresh = async (a: Address) => {
     setBal(await pub.readContract({ address: USDC, abi: erc20Abi, functionName: "balanceOf", args: [a] }).catch(() => null));
@@ -26,7 +27,8 @@ export default function HlDeposit({ onClose }: { onClose: () => void }) {
   useEffect(() => { if (addr) refresh(addr); }, [addr]);
 
   const connect = async () => {
-    const e = eth(); if (!e) return setMsg({ ok: false, t: "No wallet found. Open this page in MetaMask or another wallet app." });
+    let e: Eth;
+    try { e = (await requireEth()) as unknown as Eth; } catch (x) { return setMsg({ ok: false, t: (x as Error).message }); }
     try { const [a] = (await e.request({ method: "eth_requestAccounts" })) as Address[]; setAddr(a); } catch (x) { setMsg({ ok: false, t: (x as Error).message.split("\n")[0] }); }
   };
   const deposit = async () => {

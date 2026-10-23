@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createWalletClient, custom, parseAbi, type Address, type EIP1193Provider } from "viem";
 import { connect, switchTo, sei, pub } from "@/lib/bridge";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 const CURVE = "0x88b1de8c7C04905f3c16bd67B6ED8a75075fC99B" as Address;
 const OWNER = "0x8d80a36cAE77589A0629721f0FC2757A4FABc951";
@@ -21,7 +22,7 @@ export default function PoolAdmin() {
     setBusy(true); setMsg(null);
     try {
       await switchTo("sei");
-      const e = (window as unknown as { ethereum?: EIP1193Provider }).ethereum!;
+      const e = getEth()!;
       const w = createWalletClient({ account: me!, chain: sei, transport: custom(e) });
       const h = step === 1 ? await w.writeContract({ address: CURVE, abi, functionName: "withdrawInventory", args: [KEEPER, AMT], account: me!, chain: sei })
         : await w.writeContract({ address: PAT, abi, functionName: "transfer", args: [KEEPER, AMT2], account: me!, chain: sei });

@@ -1,5 +1,6 @@
 import { createWalletClient, custom, encodeFunctionData, parseAbi, type Address, type EIP1193Provider } from "viem";
 import { pub, sei, connect, switchTo } from "./bridge";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 /** Pay for PAT with a coin other than SEI: swap it to SEI on DragonSwap V2, then buy on PatCurve. */
 export const ROUTER = "0x11DA6463D6Cb5a03411Dbf5ab6f6bc3997Ac7428" as Address; // DragonSwap V2 SwapRouter02 (WSEI-flavoured)
@@ -31,7 +32,7 @@ export async function usdcFor(sei: bigint) {
   return { est: (est * 1003n) / 1000n, max: (est * 103n) / 100n };
 }
 async function w() {
-  const e = (window as unknown as { ethereum?: EIP1193Provider }).ethereum!;
+  const e = getEth()!;
   const account = await connect(); await switchTo("sei");
   return createWalletClient({ account, chain: sei, transport: custom(e) });
 }

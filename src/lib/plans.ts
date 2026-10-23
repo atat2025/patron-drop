@@ -1,5 +1,6 @@
 import { createPublicClient, createWalletClient, custom, defineChain, http, parseAbi, type Address, type EIP1193Provider } from "viem";
 import type { ChainCfg, PlanCfg } from "./chains";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 const abi = parseAbi([
   "function summary() view returns (uint256 navOut, uint256 sei, uint256 usdcBal, uint256 patBal, uint256 totalShares, uint256 pps, uint256 seiPerUsdc, uint256 patPriceSei, uint256 nRecs, address keeper, bool paused)",
@@ -38,8 +39,7 @@ export function monthEstimate(h: { t: number; pps: number }[], nowPps: number): 
 }
 
 async function wallet(c: ChainCfg) {
-  const e = (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
-  if (!e) throw new Error("No wallet found. Open this page in your wallet app's browser.");
+  const e = await requireEth();
   const [account] = (await e.request({ method: "eth_requestAccounts" })) as Address[];
   const hex = ("0x" + c.chainId.toString(16)) as `0x${string}`;
   if (Number(await e.request({ method: "eth_chainId" })) !== c.chainId) {

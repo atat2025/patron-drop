@@ -1,4 +1,5 @@
 import { createPublicClient, createWalletClient, custom, defineChain, http, parseAbi, padHex, type Address, type EIP1193Provider } from "viem";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 /** PATRON (PAT) LayerZero V2 bridge: Robinhood Chain OFTAdapter <-> Sei OFT (same address on both). MAINNET. */
 export const BRIDGE = "0x3d9C71B7f7907e842a3Bbf7e07d9954fB6a44e95" as Address;
@@ -41,10 +42,10 @@ export const balance = (s: Side, a: Address) => pub[s].readContract({ address: S
 export const gasBalance = (s: Side, a: Address) => pub[s].getBalance({ address: a });
 export const quote = (s: Side, to: Address, amount: bigint) => pub[s].readContract({ address: BRIDGE, abi: oftAbi, functionName: "quoteSend", args: [sendParam(s, to, amount), false] });
 
-const eth = () => (typeof window !== "undefined" ? (window as unknown as { ethereum?: EIP1193Provider }).ethereum : undefined);
-export const hasWallet = () => Boolean(eth());
+const eth = getEth;
+export const hasWallet = canConnect;
 export async function connect(): Promise<Address> {
-  const e = eth(); if (!e) throw new Error("No wallet found. Open this page in your wallet app's browser (MetaMask, Trust, Rabby…).");
+  const e = await requireEth();
   const [a] = (await e.request({ method: "eth_requestAccounts" })) as Address[];
   return a;
 }
@@ -57,7 +58,7 @@ export async function switchTo(s: Side) {
   }
 }
 async function walletFor(s: Side) {
-  const e = eth(); if (!e) throw new Error("No wallet found");
+  const e = await requireEth();
   const account = await connect(); await switchTo(s);
   return createWalletClient({ account, chain: SIDES[s].chain, transport: custom(e) });
 }

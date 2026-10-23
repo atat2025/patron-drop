@@ -11,6 +11,7 @@
   "dependencies": {
     "@0xmonaco/core": "^1.0.80",
     "@0xmonaco/types": "^1.0.80",
+    "@walletconnect/ethereum-provider": "^2.26.0",
     "lightweight-charts": "^5.2.1",
     "next": "^15.5.27",
     "react": "^19.3.0",

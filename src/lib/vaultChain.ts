@@ -1,5 +1,6 @@
 "use client";
 import { createPublicClient, createWalletClient, custom, http, parseAbi, defineChain, type Address, type EIP1193Provider } from "viem";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 /** Network switch: NEXT_PUBLIC_VAULT_NETWORK = testnet (default, Sei 1328) | mainnet (Sei 1329).
  *  Mainnet needs NEXT_PUBLIC_VAULT_ADDRESS + NEXT_PUBLIC_VAULT_TOKEN (PatronOFT on Sei) and is OFF until set. */
@@ -30,10 +31,10 @@ const erc = parseAbi(["function balanceOf(address) view returns (uint256)", "fun
 const launchAbi = parseAbi(["function quoteBuy(uint256) view returns (uint256 cost, uint256 fee)", "function buy(uint256 amount, uint256 maxCost, uint256 deadline) payable"]);
 
 export const pub = createPublicClient({ chain: CHAIN, transport: http() });
-const eth = () => (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
+const eth = getEth;
 
 export async function connect(): Promise<Address> {
-  const e = eth(); if (!e) throw new Error("No wallet found (install MetaMask or similar)");
+  const e = await requireEth();
   const [a] = (await e.request({ method: "eth_requestAccounts" })) as Address[];
   if (Number(await e.request({ method: "eth_chainId" })) !== CHAIN.id) {
     const hex = "0x" + CHAIN.id.toString(16);

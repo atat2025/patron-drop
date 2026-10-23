@@ -2,6 +2,7 @@
 import { createWalletClient, custom, parseAbi, type Address, type EIP1193Provider } from "viem";
 import { pub, PATRON_CHAIN, addSeiTestnet } from "./patronChain";
 import { NET } from "./network";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 /** PatronStrategyVault x3 (one strategy each). Addresses come from lib/network.ts. */
 export const META: Record<string, { name: string; agent: string; rule: string }> = {
@@ -39,9 +40,9 @@ export async function readKeeperLog(): Promise<KeeperEntry[]> {
   return fetch(`${NET.dataUrl}/keeper-log.json?t=${Math.floor(Date.now() / 60000)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
 }
 
-const eth = () => (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
+const eth = getEth;
 export async function connect(): Promise<Address> {
-  const e = eth(); if (!e) throw new Error("No wallet found (install MetaMask or similar)");
+  const e = await requireEth();
   const [a] = (await e.request({ method: "eth_requestAccounts" })) as Address[];
   if (Number(await e.request({ method: "eth_chainId" })) !== PATRON_CHAIN.id) await addSeiTestnet();
   return a;

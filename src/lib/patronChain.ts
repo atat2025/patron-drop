@@ -2,6 +2,7 @@
 import { createPublicClient, createWalletClient, custom, http, parseAbi, type EIP1193Provider, type Address } from "viem";
 import { defineChain } from "viem";
 import { NET, explorerTx, explorerAddr, seiscanTx } from "./network";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 export { NET, explorerTx, explorerAddr, seiscanTx };
 
 /** PATRON drop chain, chosen by NEXT_PUBLIC_PATRON_NETWORK (see lib/network.ts). Default: Sei TESTNET 1328. */
@@ -46,11 +47,11 @@ export const readBalance = (a: Address) => pub.readContract({ address: TOKEN as 
 export const quoteBuy = (n: number) => pub.readContract({ address: MARKET as Address, abi: marketAbi, functionName: "quoteBuy", args: [BigInt(n)] });
 export const quoteSell = (n: number) => pub.readContract({ address: MARKET as Address, abi: marketAbi, functionName: "quoteSell", args: [BigInt(n)] });
 
-const eth = () => (typeof window !== "undefined" ? (window as unknown as { ethereum?: EIP1193Provider }).ethereum : undefined);
-export const hasWallet = () => Boolean(eth());
+const eth = getEth;
+export const hasWallet = canConnect;
 
 export async function addSeiTestnet() {
-  const e = eth(); if (!e) throw new Error("No wallet found (install MetaMask or similar)");
+  const e = await requireEth();
   const hex = "0x" + PATRON_CHAIN.id.toString(16);
   try { await e.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] }); }
   catch {
@@ -59,7 +60,7 @@ export async function addSeiTestnet() {
 }
 
 async function wallet() {
-  const e = eth(); if (!e) throw new Error("No wallet found");
+  const e = await requireEth();
   const [account] = (await e.request({ method: "eth_requestAccounts" })) as Address[];
   const id = Number(await e.request({ method: "eth_chainId" }));
   if (id !== PATRON_CHAIN.id) await addSeiTestnet();
@@ -89,8 +90,7 @@ export const redeem = (n: number) => send((w) => w.writeContract({ address: TOKE
 
 /** Plain injected-wallet connect (no exchange SDK). */
 export async function connect(): Promise<string> {
-  const e = (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
-  if (!e) throw new Error("No wallet found (install MetaMask or similar)");
+  const e = await requireEth();
   const [a] = (await e.request({ method: "eth_requestAccounts" })) as string[];
   return a;
 }

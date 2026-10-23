@@ -18,6 +18,7 @@ import {
 import { mockTrades } from "@/lib/mock";
 import { config } from "@/lib/config";
 import type { Book, Candle, Market, PositionRow, TradeRow } from "@/lib/types";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 type Tab = "SPOT" | "PERP" | "PATRON";
 const TFL = { "1m": "1-minute", "3m": "3-minute", "5m": "5-minute", "15m": "15-minute", "1h": "1-hour", "4h": "4-hour", "1d": "1-day", "1w": "1-week", "1M": "1-month" } as const;
@@ -95,7 +96,7 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
   const flash = (ok: boolean, t: string) => { setToast({ ok, t }); setTimeout(() => setToast(null), 9000); };
   const connect = async () => {
     try {
-      const eth = (window as unknown as { ethereum?: { request: (a: unknown) => Promise<unknown> } }).ethereum;
+      const eth = getEth();
       if (eth && config.network !== "mainnet") {
         await eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: "0x530", chainName: "Sei Testnet (atlantic-2)", nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: [config.seiRpcUrl], blockExplorerUrls: ["https://seitrace.com"] }] }).catch(() => {});
         await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x530" }] }).catch(() => {});

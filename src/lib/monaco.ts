@@ -6,6 +6,7 @@ import { sei, seiTestnet } from "viem/chains";
 import { config } from "./config";
 import { MOCK_MARKETS, mockBook, mockCandles, mockTrades } from "./mock";
 import type { Book, Candle, Market, PositionRow, Stats, TradeRow } from "./types";
+import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 let publicSdk: MonacoSDK | null = null;
 let userSdk: MonacoSDK | null = null;
@@ -87,8 +88,7 @@ async function loadMonacoCandles(m: Market, interval: "1m" | "3m" | "5m" | "15m"
 export async function loadTrades(m: Market): Promise<TradeRow[]> { return mockTrades(m.price || 1); }
 
 export async function connectWallet(): Promise<string> {
-  const eth = (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
-  if (!eth) throw new Error("No wallet found (please install MetaMask or similar)");
+  const eth = await requireEth();
   const [account] = (await eth.request({ method: "eth_requestAccounts" })) as `0x${string}`[];
   if (config.network === "mainnet") {
     const hex = "0x531";
