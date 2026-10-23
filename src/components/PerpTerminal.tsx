@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import LwChart from "./LwChart";
 import { logoOf, matches, NAMES } from "@/lib/marketMeta";
-import { loadMarketsByType, loadBookMode, loadCandles, enrichMarkets, loadLiveTrades, connectWallet, loadStats, loadPositions, candleSource } from "@/lib/monaco";
+import { loadMarketsByType, loadBookMode, loadCandles, enrichMarkets, loadLiveTrades, connectWallet, placeOrder, loadStats, loadPositions, candleSource } from "@/lib/monaco";
 import { config } from "@/lib/config";
 import HlDeposit from "./HlDeposit";
 import { hlPerps, hlSpots, hlBook, hlTrades, hlCandleData, hlStats, type HlMarket } from "@/lib/hl";
@@ -112,7 +112,22 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
     ? "Hyperliquid trading is coming soon. Prices, chart and order book here are live from Hyperliquid."
     : "Monaco trading opens after mainnet access. Prices, chart and order book here are live from Monaco.");
   const connect = async () => { if (!canTrade || venue !== "monaco") return soon(); try { setAddr(await connectWallet()); flash(true, "Wallet connected"); } catch (e) { flash(false, (e as Error).message.split("\n")[0]); } };
-  const order = () => soon();
+  const [ask, setAsk] = useState<"BUY" | "SELL" | null>(null);
+  const [sending, setSending] = useState(false);
+  const order = async (side: "BUY" | "SELL") => {
+    if (venue !== "monaco" || !canTrade) return soon();
+    if (!m) return;
+    if (!addr) { await connect(); return; }
+    if (!(Number(qty) > 0)) return flash(false, "Enter an amount first");
+    if (otype === "LIMIT" && !(Number(price) > 0)) return flash(false, "Enter a limit price");
+    setAsk(side);
+  };
+  const send = async () => {
+    if (!ask || !m) return; setSending(true);
+    try { const r = await placeOrder({ market: m, side: ask, type: otype, quantity: qty, price: otype === "LIMIT" ? price : undefined, leverage: String(spot ? 1 : lev), tp: tpsl ? tp || undefined : undefined, sl: tpsl ? sl || undefined : undefined, mode }); flash(true, r); loadPositions(markets).then(setPos).catch(() => {}); }
+    catch (e) { flash(false, (e as Error).message.split("\n")[0]); }
+    setSending(false); setAsk(null);
+  };
 
   const last = candles.at(-1)?.c || m?.price || 0;
   const px = otype === "LIMIT" && +price ? +price : last;
@@ -207,8 +222,8 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
           {!spot && <label className="pt-chk"><input type="checkbox" checked={tpsl} onChange={(e) => setTpsl(e.target.checked)} /> TP/SL</label>}
           {!spot && tpsl && <div className="pt-row2"><label className="pt-inp"><span>TP</span><input value={tp} onChange={(e) => setTp(e.target.value)} placeholder="Take profit" inputMode="decimal" /></label><label className="pt-inp"><span>SL</span><input value={sl} onChange={(e) => setSl(e.target.value)} placeholder="Stop loss" inputMode="decimal" /></label></div>}
           <div className="pt-bs">
-            <button className="pt-buy" onClick={order}>{spot ? "BUY" : "BUY / LONG"}</button>
-            <button className="pt-sell" onClick={order}>{spot ? "SELL" : "SELL / SHORT"}</button>
+            <button className="pt-buy" onClick={() => order("BUY")}>{spot ? "BUY" : "BUY / LONG"}</button>
+            <button className="pt-sell" onClick={() => order("SELL")}>{spot ? "SELL" : "SELL / SHORT"}</button>
           </div>
           <p className="ux-mut pt-note">{!addr ? "Wallet not connected — " : ""}{venue === "monaco" && canTrade ? "Orders are signed by your own wallet." : `Demo — trading opens soon. Prices, chart and order book are live from ${vName}.`}</p>
           <h3>{spot ? "SPOT ACCOUNT" : "UNIFIED TRADING ACCOUNT"}</h3>
@@ -260,6 +275,7 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
       {/* Ticker */}
       <div className="pt-ticker" ref={ticker}><div>{[...markets, ...markets].map((x, i) => <button key={i} onClick={() => setSel(x.id)}><Logo base={x.base} size={16} /><b>{x.symbol.replace("/", "")}</b><em className={x.change24h >= 0 ? "up" : "dn"}>{`${x.change24h >= 0 ? "+" : ""}${x.change24h.toFixed(2)}%`}</em></button>)}</div></div>
       {dep && <HlDeposit onClose={() => setDep(false)} />}
+      {ask && m && <div className="pt-modal" onClick={() => !sending && setAsk(null)}><div onClick={(e) => e.stopPropagation()}><h3>Confirm order</h3><p>{ask === "BUY" ? (spot ? "Buy" : "Long") : (spot ? "Sell" : "Short")} {qty} {m.base} · {otype === "LIMIT" ? `limit ${price}` : "market"}{spot ? "" : ` · ${lev}x`} on Monaco (Sei mainnet). Your wallet signs it. Real funds, you can lose money.</p><button className="pt-buy" disabled={sending} onClick={send}>{sending ? "Sending…" : "Place order"}</button> <button className="pt-sell" disabled={sending} onClick={() => setAsk(null)}>Cancel</button></div></div>}
       {modal && <div className="pt-modal" onClick={() => setModal(null)}><div onClick={(e) => e.stopPropagation()}><h3>Coming soon</h3><p>{modal}</p><button className="pt-buy" onClick={() => setModal(null)}>OK</button></div></div>}
       {toast && <div className="pd-toast" style={{ background: toast.ok ? undefined : "#c00" }}>{toast.t}</div>}
     </div>

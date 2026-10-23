@@ -251,3 +251,9 @@ export async function marketAssets(): Promise<{ assetId: string; symbol: string;
   }
   return [...seen.values()];
 }
+
+/** BuilderCodes (docs.0xmonaco.com/developers/buildercodes): the builder fee is stored server-side per application.
+ * It must be set ONCE by the enrolled payout wallet (config.builderPayoutAddress) after logging in with this clientId.
+ * Not called automatically; the payout wallet owner runs it (it signs Monaco's login message only, no on-chain tx). */
+export async function getBuilderConfig() { return need().buildercodes.getConfig(); }
+export async function setBuilderFee(bps = config.builderFeeBps) { return need().buildercodes.setBuilderFee({ bps } as never); }
