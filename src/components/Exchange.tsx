@@ -163,7 +163,7 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
               <div className="ux-ph"><h2>{m?.symbol ?? "—"} <small>{tab === "PERP" ? "Perpetual" : "Spot"}</small></h2><b>{fp(last)}</b></div>
               <div className="ux-tf">{TFS.map((x) => <button key={x} className={tf === x ? "on" : ""} onClick={() => setTf(x)}>{TFN[x] ?? x}</button>)}</div>
               <div className="ux-cbox"><LwChart candles={candles} resetKey={(m?.id ?? "") + tf} /></div>
-              {m && <small className="ux-mut">{candleSource[m.id] === "reference" ? `${TFL[tf]} chart · reference price (Hyperliquid), because Monaco has few trades yet. Orders fill on Monaco.` : `${TFL[tf]} chart · Monaco trades`}</small>}
+              {m && <small className="ux-mut">{candleSource[m.id] === "reference" ? `${TFL[tf]} chart · reference price (Hyperliquid), because Monaco prints are thin or noisy. Orders fill on Monaco.` : `${TFL[tf]} chart · Monaco trades`}</small>}
             </section>
 
             <section className="ux-card ux-order">
