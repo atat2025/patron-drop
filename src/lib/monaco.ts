@@ -6,6 +6,7 @@ import { sei, seiTestnet } from "viem/chains";
 import { config } from "./config";
 import { MOCK_MARKETS, mockBook, mockCandles, mockTrades } from "./mock";
 import type { Book, Candle, Market, PositionRow, Stats, TradeRow } from "./types";
+import { sanitizeCandles, candlesNoisy, sanitizeStatsRange } from "./candleSanitize";
 import { getEth, requireEth, canConnect } from "@/lib/wallet";
 
 let publicSdk: MonacoSDK | null = null;
@@ -63,14 +64,15 @@ const thin = (cs: Candle[]) => cs.length < 12 || new Set(cs.slice(-24).map((c) =
 export async function loadCandles(m: Market, interval: "1m" | "3m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1M" = "1h"): Promise<Candle[]> {
   if (m.mock) return mockCandles(m.price);
   if (config.network === "mainnet") {
-    let cs: Candle[] = [];
-    try { cs = await loadMonacoCandles(m, interval); } catch {}
-    if (!thin(cs)) { candleSource[m.id] = "monaco"; return cs; }
+    let raw: Candle[] = [];
+    try { raw = await loadMonacoCandles(m, interval); } catch {}
+    // Sparse OR wildly noisy Monaco prints → prefer a real reference feed when available.
+    if (!thin(raw) && !candlesNoisy(raw)) { candleSource[m.id] = "monaco"; return sanitizeCandles(raw); }
     const ref = await hlCandles(m.base, interval);
-    if (ref.length) { candleSource[m.id] = "reference"; return ref; }
-    candleSource[m.id] = "monaco"; return cs;
+    if (ref.length) { candleSource[m.id] = "reference"; return sanitizeCandles(ref); }
+    candleSource[m.id] = "monaco"; return sanitizeCandles(raw);
   }
-  try { return await loadMonacoCandles(m, interval); } catch { return mockCandles(m.price || 1); }
+  try { return sanitizeCandles(await loadMonacoCandles(m, interval)); } catch { return mockCandles(m.price || 1); }
 }
 async function loadMonacoCandles(m: Market, interval: "1m" | "3m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1M"): Promise<Candle[]> {
   {
@@ -161,16 +163,24 @@ export async function enrichMarkets(markets: Market[], onUpdate: (m: Market) => 
 
 export async function loadStats(m: Market, candles: Candle[]): Promise<Stats> {
   const c24 = candles.slice(-24);
+  const rawHi = c24.length ? Math.max(...c24.map((c) => c.h)) : 0;
+  const rawLo = c24.length ? Math.min(...c24.map((c) => c.l)) : 0;
+  const refPx = m.price || c24.at(-1)?.c || 0;
+  const band = sanitizeStatsRange(rawHi, rawLo, refPx);
   const fb: Stats = {
-    mark: m.price, index: m.price, high: c24.length ? Math.max(...c24.map((c) => c.h)) : 0, low: c24.length ? Math.min(...c24.map((c) => c.l)) : 0,
+    mark: m.price, index: m.price, high: band.high, low: band.low,
     volume: m.volume ?? 0, oi: 0, funding: 0.0001, nextFunding: Math.ceil(Date.now() / 28_800_000) * 28_800_000,
   };
   if (m.mock) return fb;
   try {
     const s = await withTimeout(getPublicSdk().market.getPerpMarketSummary(m.id));
     const n = (v?: string) => (v != null && v !== "" && Number.isFinite(+v) ? +v : undefined);
+    const mark = n(s.markPrice) ?? fb.mark;
+    const index = n(s.indexPrice) ?? fb.index;
+    const ref = mark || index || refPx;
+    const hl = sanitizeStatsRange(n(s.high24h) ?? fb.high, n(s.low24h) ?? fb.low, ref);
     return {
-      mark: n(s.markPrice) ?? fb.mark, index: n(s.indexPrice) ?? fb.index, high: n(s.high24h) ?? fb.high, low: n(s.low24h) ?? fb.low,
+      mark, index, high: hl.high, low: hl.low,
       volume: n(s.quoteVolume24h) ?? fb.volume, oi: n(s.openInterestNotional) ?? n(s.openInterest) ?? 0,
       funding: n(s.currentFundingRate) ?? fb.funding, nextFunding: Number.isFinite(Date.parse(s.nextFundingTime ?? "")) && Date.parse(s.nextFundingTime!) > Date.now() ? Date.parse(s.nextFundingTime!) : fb.nextFunding,
     };

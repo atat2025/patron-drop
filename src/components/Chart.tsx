@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Candle } from "@/lib/types";
+import { sanitizeCandles, robustPriceRange } from "@/lib/candleSanitize";
 
 const fmtAxis = (n: number) => (n >= 1000 ? n.toLocaleString("en-US", { maximumFractionDigits: 0 }) : n >= 1 ? n.toFixed(2) : n.toFixed(4));
 
@@ -52,11 +53,12 @@ function Svg({ candles, W, H }: { candles: Candle[]; W: number; H: number }) {
 }
 
 function CandleSvg({ candles: all, W, H }: { candles: Candle[]; W: number; H: number }) {
-  const candles = all.slice(-60);
+  const candles = sanitizeCandles(all).slice(-60);
   const PR = 64, PT = 10, PB = 20, VH = H * 0.16;
-  const hi = Math.max(...candles.map((c) => c.h)), lo = Math.min(...candles.map((c) => c.l));
+  const rr = robustPriceRange(candles);
+  const hi = rr ? rr.max : Math.max(...candles.map((c) => c.h)), lo = rr ? rr.min : Math.min(...candles.map((c) => c.l));
   const pad = (hi - lo) * 0.08 || hi * 0.01;
-  const top = hi + pad, bot = lo - pad;
+  const top = hi + pad, bot = Math.max(0, lo - pad);
   const ch = H - PT - PB - VH;
   const y = (v: number) => PT + (1 - (v - bot) / (top - bot)) * ch;
   const n = candles.length, w = (W - PR - 6) / n;
