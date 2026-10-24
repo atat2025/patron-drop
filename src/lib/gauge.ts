@@ -21,11 +21,19 @@ const launchAbi = parseAbi(["function state() view returns (uint256 reserve, uin
 export interface Change { kind: number; amountJPY: number; stages: number[]; note: string; at: number; by: string }
 export interface GaugeData { stages: number[]; manualJPY: number; note: string; tvlPAT: number; patSEI: number; onchainJPY: number; history: Change[]; owner: string; live: boolean }
 
+async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return await Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error(label + " timeout")), ms))]);
+}
+
 export async function readGauge(): Promise<GaugeData> {
   const p = V.pub;
+  // Empty vault address (mainnet not configured) → skip on-chain TVL, use stages/manual only.
+  if (!V.VAULT || V.VAULT === "0x" || V.VAULT.length < 42) {
+    return { stages: FALLBACK_STAGES, manualJPY: 0, note: "", tvlPAT: 0, patSEI: 0, onchainJPY: 0, history: [], owner: "", live: false };
+  }
   const [tvl, st] = await Promise.all([
-    p.readContract({ address: V.VAULT, abi: V.vaultAbi, functionName: "totalDeposits" }) as Promise<bigint>,
-    p.readContract({ address: V.LAUNCH, abi: launchAbi, functionName: "state" }).catch(() => null),
+    withTimeout(p.readContract({ address: V.VAULT, abi: V.vaultAbi, functionName: "totalDeposits" }) as Promise<bigint>, 4000, "vault"),
+    withTimeout(p.readContract({ address: V.LAUNCH, abi: launchAbi, functionName: "state" }), 4000, "launch").catch(() => null),
   ]);
   const tvlPAT = Number(formatEther(tvl));
   const patSEI = st ? Number(formatEther(st[4])) : 0;

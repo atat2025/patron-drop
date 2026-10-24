@@ -28,10 +28,31 @@ export function Countdown() {
   );
 }
 
+const GAUGE_CACHE = "patron-gauge-v1";
+const FALLBACK_GAUGE = (): GaugeData => ({
+  stages: (process.env.NEXT_PUBLIC_GAUGE_STAGES || "300000000,500000000").split(",").map(Number),
+  manualJPY: 0, note: "", tvlPAT: 0, patSEI: 0, onchainJPY: 0, history: [], owner: "", live: false,
+});
+function cachedGauge(): GaugeData | null {
+  if (typeof window === "undefined") return null;
+  try { const x = JSON.parse(localStorage.getItem(GAUGE_CACHE) || "null"); return x?.stages ? x as GaugeData : null; } catch { return null; }
+}
+
 /** Staged liquidity goal (JPY). On-chain value and operator-added value are shown as separate, labeled segments. */
 export function LiquidityGauge() {
-  const [d, setD] = useState<GaugeData | null>(null);
-  useEffect(() => { const load = () => readGauge().then(setD).catch(() => {}); load(); const i = setInterval(load, 20000); return () => clearInterval(i); }, []);
+  const [d, setD] = useState<GaugeData | null>(() => cachedGauge() || FALLBACK_GAUGE());
+  useEffect(() => {
+    let alive = true;
+    const load = () => {
+      const t = new Promise<never>((_, rej) => setTimeout(() => rej(new Error("gauge timeout")), 5000));
+      Promise.race([readGauge(), t]).then((g) => {
+        if (!alive) return;
+        setD(g);
+        try { localStorage.setItem(GAUGE_CACHE, JSON.stringify(g)); } catch {}
+      }).catch(() => { if (alive && !cachedGauge()) setD(FALLBACK_GAUGE()); });
+    };
+    load(); const i = setInterval(load, 20000); return () => { alive = false; clearInterval(i); };
+  }, []);
   if (!d) return <div className="dm-g"><div className="dm-h"><span>Goal incl. pledges & reservations</span></div><small>Loading…</small></div>;
   const total = d.onchainJPY + d.manualJPY;
   const reached = d.stages.filter((s) => total >= s).length;
@@ -55,7 +76,7 @@ export function LiquidityGauge() {
         <p className="dm-note">* Includes pledges and reservations, so it differs from on-chain purchases. Amounts in USD at an approximate rate.</p>
       </div>
       <div className="dm-stages">{d.stages.map((s, k) => <span key={k} className={total >= s ? "ok" : ""}>Stage {k + 1}: {yen(s)}</span>)}</div>
-      <small>On-chain: {d.tvlPAT.toLocaleString("en-US", { maximumFractionDigits: 2 })} PAT in <Link href="/vault/">PatronVault</Link> × PAT {d.patSEI.toPrecision(3)} SEI (PatronLaunch), valued in USD (approx.). Sei testnet.</small>
+      <small>On-chain: {d.tvlPAT.toLocaleString("en-US", { maximumFractionDigits: 2 })} PAT in <Link href="/vault/">PatronVault</Link> × PAT {d.patSEI.toPrecision(3)} SEI (PatronLaunch), valued in USD (approx.).</small>
       <details className="dm-hist"><summary>Change history ({d.history.length})</summary>
         {d.history.length ? d.history.map((h, k) => <div key={k}><span>{new Date(h.at).toLocaleString("en-US")}</span>{h.kind === 1 ? <b>Team-added → {yen(h.amountJPY)}{h.note && ` (${h.note})`}</b> : <b>Stages → {h.stages.map(yen).join(" / ")}</b>}</div>) : <p>No changes</p>}
         <a href={`https://seitrace.com/address/${GAUGE}?chain=atlantic-2`} target="_blank" rel="noreferrer">GaugeConfig contract</a>
