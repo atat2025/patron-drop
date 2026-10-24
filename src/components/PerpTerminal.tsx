@@ -86,6 +86,10 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
     const hit = want && markets.find((x) => x.base.toUpperCase() === want || x.symbol.replace("/", "").toUpperCase() === want);
     if (hit) setSel(hit.id);
   }, [markets, sel]);
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("tf");
+    if (raw && (TFS as readonly string[]).includes(raw)) setTf(raw as TF);
+  }, []);
   const m = markets.find((x) => x.id === sel) ?? markets[0];
   const mode = spot ? "SPOT" : "MARGIN";
   const vName = venue === "hl" ? "Hyperliquid" : "Monaco";
