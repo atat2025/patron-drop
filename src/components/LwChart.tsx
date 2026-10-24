@@ -29,7 +29,7 @@ export default function LwChart({ candles, resetKey }: { candles: Candle[]; rese
     });
     cs.current = c.addSeries(CandlestickSeries, {
       upColor: "#3aa0ff", borderUpColor: "#3aa0ff", wickUpColor: "#3aa0ff", downColor: "#ff0047", borderDownColor: "#ff0047", wickDownColor: "#ff0047",
-      autoscaleInfoProvider: (original) => {
+      autoscaleInfoProvider: (original: () => ({ priceRange: { minValue: number; maxValue: number } } | null)) => {
         const r = rangeRef.current;
         if (r && r.max > r.min) return { priceRange: { minValue: r.min, maxValue: r.max } };
         return original();

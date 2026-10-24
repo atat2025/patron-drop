@@ -106,8 +106,8 @@ export function robustPriceRange(cs: Candle[]): { min: number; max: number } | n
   }
   samples.sort((a, b) => a - b);
   if (samples.length < 3) return null;
-  let min = pct(samples, 0.02);
-  let max = pct(samples, 0.98);
+  const min = pct(samples, 0.02);
+  const max = pct(samples, 0.98);
   if (!(max > min && min > 0)) {
     const med = pct(samples, 0.5);
     return { min: med * 0.97, max: med * 1.03 };
