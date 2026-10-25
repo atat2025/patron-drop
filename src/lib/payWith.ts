@@ -1,6 +1,6 @@
 import { createWalletClient, custom, encodeFunctionData, parseAbi, type Address, type EIP1193Provider } from "viem";
 import { pub, sei, connect, switchTo } from "./bridge";
-import { getEth, requireEth, canConnect } from "@/lib/wallet";
+import { getEth, requireEth } from "@/lib/wallet";
 
 /** Pay for PAT with a coin other than SEI: swap it to SEI on DragonSwap V2, then buy on PatCurve. */
 export const ROUTER = "0x11DA6463D6Cb5a03411Dbf5ab6f6bc3997Ac7428" as Address; // DragonSwap V2 SwapRouter02 (WSEI-flavoured)
@@ -32,8 +32,10 @@ export async function usdcFor(sei: bigint) {
   return { est: (est * 1003n) / 1000n, max: (est * 103n) / 100n };
 }
 async function w() {
-  const e = getEth()!;
-  const account = await connect(); await switchTo("sei");
+  // Connect / WC first, THEN take the provider — never capture getEth() before session exists.
+  const account = await connect();
+  await switchTo("sei");
+  const e = getEth() ?? await requireEth();
   return createWalletClient({ account, chain: sei, transport: custom(e) });
 }
 const wait = async (hash: `0x${string}`) => { const r = await c.waitForTransactionReceipt({ hash }); if (r.status !== "success") throw new Error("Transaction reverted"); return hash; };

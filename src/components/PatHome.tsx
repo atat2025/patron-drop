@@ -7,6 +7,7 @@ import { Art, StakeSection } from "./PatronDrop";
 import { Countdown, LiquidityGauge } from "./DropMeters";
 import * as P from "@/lib/patCurve";
 import { connect, switchTo } from "@/lib/bridge";
+import { friendlyErr } from "@/lib/wallet";
 import { useSeiUsd, fmtUsd } from "@/lib/seiUsd";
 
 /** Mainnet home: the original PATRON home layout, wired to Sei mainnet PatCurve (chain 1329). */
@@ -28,7 +29,7 @@ export default function PatHome() {
     if (me) try { setBal(await P.patBalance(me)); } catch {}
   }, [me]);
   useEffect(() => { load(); const t = setInterval(load, 10000); return () => clearInterval(t); }, [load]);
-  const doConnect = async () => { try { const a = await connect(); await switchTo("sei"); setMe(a); } catch (e) { setErr((e as Error).message.split("\n")[0]); } };
+  const doConnect = async () => { try { const a = await connect(); await switchTo("sei"); setMe(a); setErr(null); } catch (e) { setErr(friendlyErr(e)); } };
   const price = st ? Number(formatEther(st.price)) : undefined;
   const Px = ({ v }: { v?: number }) => {
     if (v === undefined) return <>…</>;
@@ -58,7 +59,7 @@ export default function PatHome() {
         <LiquidityGauge />
         <div className="pd-info">Buy and sell PATRON on Sei. The price goes up a little with every buy. <a onClick={() => setMode("stats")}>Learn more</a>
           {me && <div className="pd-bal">You hold <b>{num(bal, 2)}</b> PAT</div>}
-          <div className="pd-net">Sei · 1329 · <a href={`https://seiscan.io/address/${P.CURVE}`} target="_blank" rel="noreferrer">contract</a> · <a onClick={() => switchTo("sei").catch((e) => setErr((e as Error).message))}>Add Sei</a></div>
+          <div className="pd-net">Sei · 1329 · <a href={`https://seiscan.io/address/${P.CURVE}`} target="_blank" rel="noreferrer">contract</a> · <a onClick={() => switchTo("sei").catch((e) => setErr(friendlyErr(e)))}>Add Sei</a></div>
           {err && <div className="pd-err">{err}</div>}
         </div>
         <button className="pd-buy" onClick={() => setMode("buy")}>Buy</button>

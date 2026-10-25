@@ -1,5 +1,5 @@
-import { createPublicClient, createWalletClient, custom, defineChain, http, parseAbi, padHex, type Address, type EIP1193Provider } from "viem";
-import { getEth, requireEth, canConnect } from "@/lib/wallet";
+import { createPublicClient, createWalletClient, custom, defineChain, http, parseAbi, padHex, type Address } from "viem";
+import { getEth, requireEth, canConnect, friendlyErr } from "@/lib/wallet";
 
 /** PATRON (PAT) LayerZero V2 bridge: Robinhood Chain OFTAdapter <-> Sei OFT (same address on both). MAINNET. */
 export const BRIDGE = "0x3d9C71B7f7907e842a3Bbf7e07d9954fB6a44e95" as Address;
@@ -42,24 +42,47 @@ export const balance = (s: Side, a: Address) => pub[s].readContract({ address: S
 export const gasBalance = (s: Side, a: Address) => pub[s].getBalance({ address: a });
 export const quote = (s: Side, to: Address, amount: bigint) => pub[s].readContract({ address: BRIDGE, abi: oftAbi, functionName: "quoteSend", args: [sendParam(s, to, amount), false] });
 
-const eth = getEth;
 export const hasWallet = canConnect;
 export async function connect(): Promise<Address> {
   const e = await requireEth();
-  const [a] = (await e.request({ method: "eth_requestAccounts" })) as Address[];
+  const accounts = (await e.request({ method: "eth_requestAccounts" })) as Address[];
+  const a = accounts?.[0];
+  if (!a) throw new Error("No account from wallet. Unlock MetaMask and try again.");
   return a;
 }
 export async function switchTo(s: Side) {
-  const e = eth()!; const c = SIDES[s].chain; const hex = ("0x" + c.id.toString(16)) as `0x${string}`;
-  if (Number(await e.request({ method: "eth_chainId" })) === c.id) return;
-  try { await e.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] }); }
-  catch {
-    await e.request({ method: "wallet_addEthereumChain", params: [{ chainId: hex, chainName: c.name, nativeCurrency: c.nativeCurrency, rpcUrls: [...c.rpcUrls.default.http], blockExplorerUrls: [c.blockExplorers.default.url] }] });
+  const e = await requireEth();
+  const c = SIDES[s].chain;
+  const hex = (`0x${c.id.toString(16)}`) as `0x${string}`;
+  const cur = Number(await e.request({ method: "eth_chainId" }));
+  if (cur === c.id) return;
+  try {
+    await e.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] });
+  } catch (err) {
+    const code = Number((err as { code?: number }).code);
+    // User rejected switch — stop; don't also spam add-chain.
+    if (code === 4001) throw new Error(friendlyErr(err));
+    // 4902 = chain not in wallet → add then switch.
+    try {
+      await e.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: hex,
+          chainName: c.name,
+          nativeCurrency: c.nativeCurrency,
+          rpcUrls: [...c.rpcUrls.default.http],
+          blockExplorerUrls: [c.blockExplorers.default.url],
+        }],
+      });
+    } catch (err2) {
+      throw new Error(friendlyErr(err2));
+    }
   }
 }
 async function walletFor(s: Side) {
-  const e = await requireEth();
-  const account = await connect(); await switchTo(s);
+  const account = await connect();
+  await switchTo(s);
+  const e = getEth() ?? await requireEth();
   return createWalletClient({ account, chain: SIDES[s].chain, transport: custom(e) });
 }
 export async function needsApproval(s: Side, owner: Address, amount: bigint) {

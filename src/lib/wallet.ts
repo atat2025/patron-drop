@@ -1,6 +1,6 @@
 /** One wallet provider for the whole site.
- * 1) Injected wallet (MetaMask / Rabby / in-app wallet browsers) if present.
- * 2) Otherwise WalletConnect v2 (Reown) QR / deep link — needs NEXT_PUBLIC_WC_PROJECT_ID (free at cloud.reown.com).
+ * 1) Injected wallet — prefer MetaMask when several extensions inject.
+ * 2) Otherwise WalletConnect v2 (Reown) QR / deep link — needs NEXT_PUBLIC_WC_PROJECT_ID.
  * 3) Otherwise a help sheet with an "Open in MetaMask" deep link.
  */
 import type { EIP1193Provider } from "viem";
@@ -11,8 +11,19 @@ const SEI_RPC = process.env.NEXT_PUBLIC_SEI_RPC_URL || "https://evm-rpc.sei-apis
 type WcProvider = EIP1193Provider & { session?: unknown; connect: () => Promise<void>; disconnect: () => Promise<void>; on: (e: string, f: (...a: unknown[]) => void) => void };
 let wc: WcProvider | null = null;
 
-const injected = (): EIP1193Provider | undefined =>
-  typeof window !== "undefined" ? (window as unknown as { ethereum?: EIP1193Provider }).ethereum : undefined;
+type EthAny = EIP1193Provider & {
+  isMetaMask?: boolean; isBraveWallet?: boolean; providers?: EthAny[];
+};
+
+/** Pick the best injected provider. Prefer real MetaMask over other hijacks of window.ethereum. */
+const injected = (): EIP1193Provider | undefined => {
+  if (typeof window === "undefined") return undefined;
+  const eth = (window as unknown as { ethereum?: EthAny }).ethereum;
+  if (!eth) return undefined;
+  const list: EthAny[] = Array.isArray(eth.providers) && eth.providers.length ? eth.providers : [eth];
+  const mm = list.find((p) => p?.isMetaMask && !p?.isBraveWallet);
+  return (mm || list[0]) as EIP1193Provider | undefined;
+};
 
 /** Sync: the provider currently usable (injected, or an already-connected WalletConnect session). */
 export function getEth(): EIP1193Provider | undefined {
@@ -22,6 +33,19 @@ export function getEth(): EIP1193Provider | undefined {
 export const canConnect = () => Boolean(injected()) || Boolean(WC_PROJECT_ID);
 
 export const NO_WALLET_MSG = "Open this page in your wallet app (MetaMask, Trust, Rainbow…) to connect.";
+
+/** Turn wallet / RPC errors into a short user-facing line. */
+export function friendlyErr(e: unknown): string {
+  const any = e as { code?: number | string; message?: string; shortMessage?: string; details?: string };
+  const code = typeof any?.code === "number" ? any.code : Number(any?.code);
+  const raw = (any?.shortMessage || any?.message || String(e || "Something went wrong")).split("\n")[0];
+  if (code === 4001 || /user rejected|denied|cancelled|canceled/i.test(raw)) return "Cancelled in wallet.";
+  if (code === 4902 || /Unrecognized chain|chain.*not.*added/i.test(raw)) return "Add Sei (chain 1329) in MetaMask, then try again.";
+  if (/unsupported chain|chain mismatch|correct chain/i.test(raw)) return "Switch MetaMask to Sei mainnet (1329), then try again.";
+  if (/insufficient funds|exceeds balance/i.test(raw)) return "Not enough SEI in this wallet for the buy + gas.";
+  if (raw.length > 160) return raw.slice(0, 157) + "…";
+  return raw;
+}
 
 export function metamaskDeepLink(): string {
   if (typeof window === "undefined") return "https://metamask.app.link/dapp/app.patron.red/";

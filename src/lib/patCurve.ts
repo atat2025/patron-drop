@@ -1,6 +1,6 @@
 import { createWalletClient, custom, parseAbi, type Address, type EIP1193Provider } from "viem";
 import { pub, sei, connect, switchTo, BRIDGE } from "./bridge";
-import { getEth, requireEth, canConnect } from "@/lib/wallet";
+import { getEth, requireEth } from "@/lib/wallet";
 
 /** PatCurve on Sei mainnet: linear bonding curve selling bridged PAT (OFT) for SEI. */
 export const CURVE = "0x88b1de8c7C04905f3c16bd67B6ED8a75075fC99B" as Address;
@@ -53,8 +53,10 @@ export const quoteBuy = (a: bigint) => c.readContract({ address: CURVE, abi, fun
 export const quoteSell = (a: bigint) => c.readContract({ address: CURVE, abi, functionName: "quoteSell", args: [a] });
 export const patBalance = (a: Address) => c.readContract({ address: PAT_SEI, abi: erc20, functionName: "balanceOf", args: [a] });
 async function w() {
-  const e = getEth()!;
-  const account = await connect(); await switchTo("sei");
+  // Connect / WC first, THEN take the provider — never capture getEth() before session exists.
+  const account = await connect();
+  await switchTo("sei");
+  const e = getEth() ?? await requireEth();
   return createWalletClient({ account, chain: sei, transport: custom(e) });
 }
 const wait = async (hash: `0x${string}`) => { const r = await c.waitForTransactionReceipt({ hash }); if (r.status !== "success") throw new Error("Transaction reverted"); return hash; };

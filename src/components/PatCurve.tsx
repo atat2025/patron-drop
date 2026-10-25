@@ -1,9 +1,9 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { formatEther, parseEther, type Address } from "viem";
-import Mustache from "./Mustache";
 import * as P from "@/lib/patCurve";
-import { connect } from "@/lib/bridge";
+import { connect, switchTo } from "@/lib/bridge";
+import { friendlyErr } from "@/lib/wallet";
 import { useSeiUsd, fmtUsd } from "@/lib/seiUsd";
 import { ResidencyCheck, useResidency } from "@/lib/residency";
 import * as PW from "@/lib/payWith";
@@ -22,6 +22,7 @@ export default function PatCurvePage({ drop = "../", panel, start = "buy", onDon
   const [side, setSide] = useState<"buy" | "sell">(start);
   const [amt, setAmt] = useState("");
   const [q, setQ] = useState<bigint>();
+  const [qErr, setQErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [coin, setCoin] = useState<PW.Coin>(PW.COINS[0]);
   const [bals, setBals] = useState<Record<string, bigint>>({});
@@ -36,9 +37,13 @@ export default function PatCurvePage({ drop = "../", panel, start = "buy", onDon
   useEffect(() => { if (!amt && st && usd) setAmt(side === "buy" ? patFor(5) : bal ? String(Math.floor(Number(formatEther(bal)))) : "1"); }, [st, usd]); // eslint-disable-line react-hooks/exhaustive-deps
   let wei = 0n; try { wei = amt ? parseEther(amt) : 0n; } catch {}
   useEffect(() => {
-    setQ(undefined); if (wei <= 0n) return;
+    setQ(undefined); setQErr(null); if (wei <= 0n) return;
     const t = setTimeout(async () => {
-      try { if (side === "buy") { const [c, f] = await P.quoteBuy(wei); setQ(c + f); } else { const [g, f] = await P.quoteSell(wei); setQ(g - f); } } catch { setQ(undefined); }
+      try {
+        if (side === "buy") { const [c, f] = await P.quoteBuy(wei); setQ(c + f); }
+        else { const [g, f] = await P.quoteSell(wei); setQ(g - f); }
+        setQErr(null);
+      } catch (e) { setQ(undefined); setQErr(friendlyErr(e)); }
     }, 300);
     return () => clearTimeout(t);
   }, [amt, side, st]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -46,15 +51,43 @@ export default function PatCurvePage({ drop = "../", panel, start = "buy", onDon
   const payAlt = side === "buy" && coin.sym !== "SEI";
   const seiNeed = q === undefined ? undefined : (q * 102n) / 100n;
   useEffect(() => { setUsdcNeed(undefined); if (coin.sym === "USDC" && seiNeed) PW.usdcFor(seiNeed).then((r) => setUsdcNeed(r.est)).catch(() => {}); }, [coin, q]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const doConnect = async () => {
+    try {
+      const a = await connect();
+      await switchTo("sei");
+      setMe(a);
+      setMsg(null);
+      return a;
+    } catch (e) {
+      setMsg({ ok: false, t: friendlyErr(e) });
+      throw e;
+    }
+  };
+
   const go = async () => {
-    setBusy(true); setMsg(null);
-    try { const a = me ?? (await connect()); setMe(a);
-      if (payAlt && seiNeed) { await PW.getSei(coin, seiNeed, setStep); setStep("Buying PAT…"); }
-      const h = side === "buy" ? await P.buy(wei) : await P.sell(wei); setMsg({ ok: true, t: `${side === "buy" ? "Bought" : "Sold"} ${amt} PAT`, h }); load(); onDone?.(); }
-    catch (e) { setMsg({ ok: false, t: (e as Error).message.split("\n")[0] }); }
+    setMsg(null);
+    if (!ok) { setMsg({ ok: false, t: "Check the risk box above first." }); return; }
+    if (wei <= 0n) { setMsg({ ok: false, t: "Enter how many PAT you want." }); return; }
+    if (side === "buy" && st?.paused) { setMsg({ ok: false, t: "Buying is paused right now." }); return; }
+    if (q === undefined) { setMsg({ ok: false, t: qErr || "Still fetching the price — wait a second and try again." }); return; }
+    setBusy(true);
+    try {
+      setStep("Connect MetaMask…");
+      const a = me ?? (await doConnect());
+      setMe(a);
+      if (payAlt && seiNeed) { await PW.getSei(coin, seiNeed, setStep); setStep("Confirm buy in MetaMask…"); }
+      else setStep("Confirm buy in MetaMask…");
+      const h = side === "buy" ? await P.buy(wei) : await P.sell(wei);
+      setMsg({ ok: true, t: `${side === "buy" ? "Bought" : "Sold"} ${amt} PAT`, h });
+      load(); onDone?.();
+    } catch (e) {
+      setMsg({ ok: false, t: friendlyErr(e) });
+    }
     setStep(""); setBusy(false);
   };
   const empty = st && st.inv === 0n;
+  const canSubmit = !busy && wei > 0n && !(side === "buy" && !!st?.paused);
 
   const trade = (
 <section className="pv-card">
@@ -72,9 +105,11 @@ export default function PatCurvePage({ drop = "../", panel, start = "buy", onDon
           {payAlt && <small className="pd-fine">We first turn your {coin.sym} into SEI on DragonSwap (you sign {coin.sym === "USDC" ? "1–2 times" : "once"}), then buy. If the price moves more than 3%, nothing is swapped. Keep a little SEI for fees.</small>}
           {st?.paused && side === "buy" && <div className="pd-err">Buying is paused. Selling stays open.</div>}
           {empty && side === "buy" && <div className="pd-err">Sold out for now. More PAT may be added.</div>}
+          {qErr && wei > 0n && <div className="pd-err">Quote failed: {qErr}</div>}
           <ResidencyCheck />
-          <button className="pd-buy" disabled={busy || !ok || wei <= 0n || q === undefined || (side === "buy" && !!st?.paused)} onClick={go}>
-            {busy ? step || "Confirm in wallet…" : `${side === "buy" ? "Buy" : "Sell"} ${Number(amt || 0).toLocaleString("en-US")} PAT${q !== undefined ? ` for ${usdOf(q)}` : ""}`}</button>
+          {!ok && <small className="pd-fine">Check the box above, then tap Buy — MetaMask will ask you to confirm on Sei.</small>}
+          <button className="pd-buy" disabled={!canSubmit} onClick={go}>
+            {busy ? step || "Confirm in MetaMask…" : `${side === "buy" ? "Buy" : "Sell"} ${Number(amt || 0).toLocaleString("en-US")} PAT${q !== undefined ? ` for ${usdOf(q)}` : ""}`}</button>
           {msg && <div className={msg.ok ? "pv-ok" : "pd-err"}>{msg.t}{msg.h && <> · <a href={`https://seiscan.io/tx/${msg.h}`} target="_blank" rel="noreferrer">tx ↗</a></>}</div>}
         </section>);
   if (panel) return <div className="pd-mbody">{trade}</div>;
@@ -83,7 +118,7 @@ export default function PatCurvePage({ drop = "../", panel, start = "buy", onDon
       <header className="pd-top">
         <a className="pd-brand" href={drop}><span>patron<i>_</i></span></a>
         <div className="pd-actions"><span className="pd-demo live">SEI</span>
-          <button className="pd-wallet" onClick={async () => { try { setMe(await connect()); } catch (e) { setMsg({ ok: false, t: (e as Error).message }); } }}>{me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "Connect"}</button></div>
+          <button className="pd-wallet" onClick={() => doConnect().catch(() => {})}>{me ? `${me.slice(0, 6)}…${me.slice(-4)}` : "Connect"}</button></div>
       </header>
       <main className="pd-main">
         <section className="pd-card">
