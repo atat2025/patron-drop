@@ -30,7 +30,13 @@ export default function PatHome() {
   useEffect(() => { load(); const t = setInterval(load, 10000); return () => clearInterval(t); }, [load]);
   const doConnect = async () => { try { const a = await connect(); await switchTo("sei"); setMe(a); } catch (e) { setErr((e as Error).message.split("\n")[0]); } };
   const price = st ? Number(formatEther(st.price)) : undefined;
-  const Px = ({ v }: { v?: number }) => v === undefined || !usd ? <>…</> : <>{fmtUsd(v * usd)}<small className="pd-sei"> ({v.toLocaleString("en-US", { maximumFractionDigits: 6 })} SEI)</small></>;
+  const Px = ({ v }: { v?: number }) => {
+    if (v === undefined) return <>…</>;
+    const sei = v.toLocaleString("en-US", { maximumFractionDigits: 6 }) + " SEI";
+    // Always paint SEI immediately from cached/baked curve; USD is a bonus once FX loads.
+    if (!usd) return <>{sei}</>;
+    return <>{fmtUsd(v * usd)}<small className="pd-sei"> ({sei})</small></>;
+  };
 
   return (
     <div className="pd">

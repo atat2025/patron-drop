@@ -53,7 +53,7 @@ export function LiquidityGauge() {
     };
     load(); const i = setInterval(load, 20000); return () => { alive = false; clearInterval(i); };
   }, []);
-  if (!d) return <div className="dm-g"><div className="dm-h"><span>Goal incl. pledges & reservations</span></div><small>Loading…</small></div>;
+  if (!d) return null; // initial state always FALLBACK_GAUGE / cache — never hang on Loading…
   const total = d.onchainJPY + d.manualJPY;
   const reached = d.stages.filter((s) => total >= s).length;
   const next = d.stages[reached];

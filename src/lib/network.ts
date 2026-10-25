@@ -1,5 +1,5 @@
 /** ONE switch for the whole site: NEXT_PUBLIC_PATRON_NETWORK = "testnet" (default) | "mainnet".
- *  To go live later, fill the mainnet block below (or set the NEXT_PUBLIC_* overrides) and rebuild.
+ *  Production (app.patron.red) MUST build with NEXT_PUBLIC_PATRON_NETWORK=mainnet so root shows PatHome + real PatCurve.
  *  Any address left empty turns that feature off instead of pointing at the wrong chain. */
 export type NetName = "testnet" | "mainnet";
 export interface NetConfig {
