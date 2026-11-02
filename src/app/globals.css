@@ -702,3 +702,17 @@ html[data-theme="dark"] .pt-modal>div{background:#10151e;color:#f3f5f7}
 html[data-theme="dark"] .pf,html[data-theme="dark"] footer{background:#080a0d;color:#a6adb7;border-color:#30343b}
 html[data-theme="dark"] .ux-logo,html[data-theme="dark"] .mkp-coin{background:#fff}
 html[data-theme="dark"] .ux-cbox,html[data-theme="dark"] .ux-chart{background:#10151e}
+/* nav: Human Asset Market */
+.sn-brand{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:16px}.sn-brand small{font-size:13px;font-weight:500;opacity:.75}
+.sn-dd{position:relative}
+.sn-ddb{font:inherit;font-size:14px;font-weight:500;color:inherit;background:none;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+.sn-ddb.on{color:#ff0047;background:#fff0f4}
+.sn-links a:focus-visible,.sn-ddb:focus-visible,.sn-ddm a:focus-visible{outline:2px solid #ff0047;outline-offset:2px}
+.sn-ddm{position:absolute;top:100%;left:0;min-width:220px;display:flex;flex-direction:column;padding:6px;background:#fffdf7;border:1px solid #ebe6da;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:60}
+.sn-ddm a{color:#333;text-decoration:none;font-size:14px;padding:10px 12px;border-radius:8px}.sn-ddm a:hover,.sn-ddm a.on{color:#ff0047;background:#fff0f4}
+html[data-theme="dark"] .sn-ddb{color:#e3e6ea}html[data-theme="dark"] .sn-ddm{background:#15161b;border-color:#30343b}html[data-theme="dark"] .sn-ddm a{color:#e3e6ea}html[data-theme="dark"] .sn-ddm a:hover,html[data-theme="dark"] .sn-ddm a.on{background:#2a1219;color:#ff0047}
+.mn-g{height:auto;padding:52px 12px 14px}.mn-gl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.mn-gl a{color:#f3f5f7;text-decoration:none;font-size:15px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.08)}.mn-gl a.on{background:color-mix(in srgb,var(--g) 45%,transparent)}
+@media (max-width:1100px) and (min-width:761px){.sn-brand small{display:none}}
+@media (max-width:760px){.sn-brand small{font-size:11px}}
+html[data-theme="dark"] .sn-ddb.on{color:#ff0047;background:#2a1219}

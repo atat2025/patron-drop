@@ -7,15 +7,14 @@ import { MUSTACHE_PATH } from "./Mustache";
 
 type Tile = { img?: string; mus?: boolean; txt?: string; bg?: string; pos?: string };
 const L = (b: string) => ({ img: `/logos/${b}` });
-const MENU: { h: string; l: string; glow: string; tiles: Tile[]; sub?: string }[] = [
-  { h: "/", l: "Home", glow: "#ff0047", tiles: [{ mus: true }] },
-  { h: "/markets/", l: "Markets", glow: "#f5b301", tiles: [{ img: "/logos/human/cmc-35336.png" }, L("NVDA.svg"), L("BTC.svg"), L("ETH.svg"), { img: "/logos/human/cmc-35347.png" }] },
-  { h: "/vault/", l: "AI Trade", glow: "#3aa0ff", tiles: [{ txt: "AI", bg: "linear-gradient(135deg,#3aa0ff,#7b5cff)" }, { txt: "$", bg: "#1f9d6b" }] },
-  { h: "/spot/", l: "Spot", glow: "#1f9d6b", tiles: [L("SEI.svg"), L("BTC.svg"), L("ETH.svg"), L("SOL.svg")] },
-  { h: "/perp/", l: "Perpetual", glow: "#ff5c86", tiles: [L("AAPL.svg"), L("TSLA.svg"), L("NVDA.svg"), L("MSFT.svg"), L("GOLD.png")] },
-  { h: "/digitaltwin/", l: "DigitalTwin", glow: "#9b5cff", tiles: [] },
-  { h: "/offerpad/", l: "OfferPad", glow: "#ff8a00", sub: "Coming soon", tiles: [] },
-  { h: "/bridge/", l: "Bridge", glow: "#2ec4b6", tiles: [L("SEI.svg"), { txt: "⇄", bg: "#222" }, L("HOOD.svg")] },
+type Item = { h: string; l: string };
+type Group = { l: string; h?: string; items?: Item[]; glow: string; tiles: Tile[]; sub?: string };
+const NAV: Group[] = [
+  { l: "PATRON PERP", glow: "#ff5c86", sub: "Human · Stock and Crypto · AI Trade", tiles: [{ img: "/logos/human/cmc-35336.png" }, L("NVDA.svg"), L("BTC.svg"), { txt: "AI", bg: "linear-gradient(135deg,#3aa0ff,#7b5cff)" }], items: [
+    { h: "/markets/", l: "Human" }, { h: "/spot/", l: "Stock and Crypto · Spot" }, { h: "/perp/", l: "Stock and Crypto · Perp" }, { h: "/vault/", l: "AI Trade" }] },
+  { l: "DigitalTwin", glow: "#9b5cff", tiles: [], items: [{ h: "/digitaltwin/", l: "DigitalTwin" }, { h: "/offerpad/", l: "OfferPad" }] },
+  { l: "PATRON LENDING", h: "/lending/", glow: "#1f9d6b", sub: "Coming soon", tiles: [{ txt: "$", bg: "#1f9d6b" }] },
+  { l: "PATRON TOKEN", glow: "#2ec4b6", tiles: [L("SEI.svg"), { txt: "⇄", bg: "#222" }, L("HOOD.svg")], items: [{ h: "/pat/", l: "Buy PAT" }, { h: "/bridge/", l: "Bridge" }] },
 ];
 function TileEl({ t, i }: { t: Tile; i: number }) {
   const style: React.CSSProperties = { zIndex: 10 - i, transform: `rotate(${[-6, 3, -2, 5, -4, 2][i % 6]}deg)` };
@@ -24,8 +23,6 @@ function TileEl({ t, i }: { t: Tile; i: number }) {
   if (t.mus) return <span className="mn-t" style={{ ...style, background: "#ff0047" }}><svg viewBox="-20 -20 1405 486" width="34"><path d={MUSTACHE_PATH} fill="#fff" /></svg></span>;
   return <span className="mn-t" style={{ ...style, background: t.bg }}>{t.txt}</span>;
 }
-
-const LINKS: [string, string][] = [["/", "Home"], ["/markets/", "Markets"], ["/vault/", "AI Trade"], ["/spot/", "Spot"], ["/perp/", "Perpetual"], ["/digitaltwin/", "DigitalTwin"], ["/offerpad/", "OfferPad"], ["/bridge/", "Bridge"]];
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -44,6 +41,19 @@ function ThemeToggle() {
   );
 }
 
+function Drop({ g, on }: { g: Group; on: (h: string) => boolean }) {
+  const [o, setO] = useState(false);
+  const active = g.items!.some((i) => on(i.h));
+  return (
+    <div className="sn-dd" onMouseLeave={() => setO(false)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setO(false); }}
+      onKeyDown={(e) => { if (e.key === "Escape") { setO(false); (e.currentTarget.firstChild as HTMLElement)?.focus(); } }}>
+      <button type="button" className={"sn-ddb" + (active ? " on" : "")} aria-haspopup="true" aria-expanded={o} onClick={() => setO((v) => !v)}>{g.l} <span aria-hidden>▾</span></button>
+      {o && <div className="sn-ddm" role="menu">{g.items!.map((i) => <Link key={i.h} href={i.h} role="menuitem" className={on(i.h) ? "on" : ""} onClick={() => setO(false)}>{i.l}</Link>)}</div>}
+    </div>
+  );
+}
+
 export default function SiteNav() {
   const path = usePathname() || "/";
   const [open, setOpen] = useState(false);
@@ -54,7 +64,8 @@ export default function SiteNav() {
   return (
     <nav className="sn">
       <div className="sn-in">
-        <div className="sn-links">{LINKS.map(([h, l]) => <Link key={h} href={h} className={on(h) ? "on" : ""}>{l}</Link>)}</div>
+        <Link href="/" className="sn-brand" aria-label="PATRON — Human Asset Market, home"><svg viewBox="-20 -20 1405 486" width="28" aria-hidden><path d={MUSTACHE_PATH} fill="#ff0047" /></svg><span>PATRON <i>—</i> <small>Human Asset Market</small></span></Link>
+        <div className="sn-links">{NAV.map((g) => g.items ? <Drop key={g.l} g={g} on={on} /> : <Link key={g.l} href={g.h!} className={on(g.h!) ? "on" : ""}>{g.l}</Link>)}</div>
         <ThemeToggle />
         <button className="sn-burger" aria-label="Menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}><span /><span /><span /></button>
       </div>
@@ -62,11 +73,17 @@ export default function SiteNav() {
         <div className="mn" role="dialog" aria-label="Menu">
           <div className="mn-top"><b>Menu</b><button className="mn-x" aria-label="Close menu" onClick={() => setOpen(false)}>×</button></div>
           <div className="mn-list">
-            {MENU.map((c) => (
-              <Link key={c.h} href={c.h} className={"mn-c" + (on(c.h) ? " on" : "")} style={{ ["--g" as string]: c.glow }} onClick={() => setOpen(false)}>
-                <span className="mn-l">{c.l}</span>
-                {c.sub && <span className="mn-sub">{c.sub}</span>}
-                <span className="mn-tiles">{c.tiles.map((t, i) => <TileEl key={i} t={t} i={i} />)}</span>
+            <Link href="/" className={"mn-c mn-home" + (path === "/" ? " on" : "")} style={{ ["--g" as string]: "#ff0047" }} onClick={() => setOpen(false)}><span className="mn-l">PATRON — Human Asset Market</span><span className="mn-tiles"><TileEl t={{ mus: true }} i={0} /></span></Link>
+            {NAV.map((g) => g.items ? (
+              <div key={g.l} className="mn-c mn-g" style={{ ["--g" as string]: g.glow }}>
+                <span className="mn-l">{g.l}</span>
+                <span className="mn-gl">{g.items.map((i) => <Link key={i.h} href={i.h} className={on(i.h) ? "on" : ""} onClick={() => setOpen(false)}>{i.l}</Link>)}</span>
+              </div>
+            ) : (
+              <Link key={g.l} href={g.h!} className={"mn-c" + (on(g.h!) ? " on" : "")} style={{ ["--g" as string]: g.glow }} onClick={() => setOpen(false)}>
+                <span className="mn-l">{g.l}</span>
+                {g.sub && <span className="mn-sub">{g.sub}</span>}
+                <span className="mn-tiles">{g.tiles.map((t, i) => <TileEl key={i} t={t} i={i} />)}</span>
               </Link>
             ))}
           </div>
