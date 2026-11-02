@@ -2,7 +2,7 @@ export const metadata = { title: "PATRON Lending · YouTube Revenue Financing", 
 const H2: React.CSSProperties = { fontSize: 22, margin: "36px 0 10px" };
 export default function Page() {
   return (
-    <main style={{ maxWidth: 820, margin: "0 auto", padding: "28px 20px 64px", lineHeight: 1.65 }}>
+    <main style={{ maxWidth: 820, margin: "0 auto", padding: "28px 20px 64px", lineHeight: 1.65, fontFamily: "var(--sans)" }}>
       <img src="/lending/banner.webp" alt="PATRON LENDING" style={{ width: "100%", borderRadius: 18, display: "block" }} />
       <h1 style={{ fontSize: 34, margin: "28px 0 6px" }}>PATRON Lending: YouTube Revenue Financing</h1>
       <p style={{ fontSize: 19, opacity: .85, margin: 0 }}>Turn your future YouTube revenue into capital.</p>
