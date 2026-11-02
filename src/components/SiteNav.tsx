@@ -15,6 +15,7 @@ const NAV: Group[] = [
   { l: "DigitalTwin", glow: "#9b5cff", tiles: [], items: [{ h: "/digitaltwin/", l: "DigitalTwin" }, { h: "/offerpad/", l: "OfferPad" }] },
   { l: "PATRON LENDING", h: "/lending/", glow: "#1f9d6b", sub: "Coming soon", tiles: [{ txt: "$", bg: "#1f9d6b" }] },
   { l: "PATRON TOKEN", glow: "#2ec4b6", tiles: [L("SEI.svg"), { txt: "⇄", bg: "#222" }, L("HOOD.svg")], items: [{ h: "/pat/", l: "Buy PAT" }, { h: "/bridge/", l: "Bridge" }] },
+  { l: "Bridge", h: "/bridge/", glow: "#2ec4b6", tiles: [L("SEI.svg"), { txt: "⇄", bg: "#222" }, L("HOOD.svg")] },
 ];
 function TileEl({ t, i }: { t: Tile; i: number }) {
   const style: React.CSSProperties = { zIndex: 10 - i, transform: `rotate(${[-6, 3, -2, 5, -4, 2][i % 6]}deg)` };
