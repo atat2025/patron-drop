@@ -65,7 +65,7 @@ export default function SiteNav() {
   return (
     <nav className="sn">
       <div className="sn-in">
-        <Link href="/" className="sn-brand" aria-label="PATRON — Human Asset Market, home"><svg viewBox="-20 -20 1405 486" width="28" aria-hidden><path d={MUSTACHE_PATH} fill="#ff0047" /></svg><span>PATRON <i>—</i> <small>Human Asset Market</small></span></Link>
+        <Link href="/" className="sn-brand" aria-label="PATRON — Human Asset Market, home"><span>PATRON <i>—</i> <small>Human Asset Market</small></span></Link>
         <div className="sn-links">{NAV.map((g) => g.items ? <Drop key={g.l} g={g} on={on} /> : <Link key={g.l} href={g.h!} className={on(g.h!) ? "on" : ""}>{g.l}</Link>)}</div>
         <ThemeToggle />
         <button className="sn-burger" aria-label="Menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}><span /><span /><span /></button>

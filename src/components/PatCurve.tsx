@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatEther, parseEther, type Address } from "viem";
 import * as P from "@/lib/patCurve";
+import { Art } from "./PatronDrop";
 import { connect, switchTo } from "@/lib/bridge";
 import { friendlyErr } from "@/lib/wallet";
 import { useSeiUsd, fmtUsd } from "@/lib/seiUsd";
@@ -122,6 +123,8 @@ export default function PatCurvePage({ drop = "../", panel, start = "buy", onDon
       </header>
       <main className="pd-main">
         <section className="pd-card">
+          <div className="pd-card-h"><h1>PATRON</h1><p>$PAT</p></div>
+          <Art />
           <div className="pd-card-h"><h1>{usdOf(st?.price)}</h1><p>PAT on Sei · {seiS(st?.price)}</p></div>
           <div className="br-row" style={{ marginTop: 14, color: "#ccc" }}><small>Available {n(st?.inv, 0)} PAT</small><small>Sold {n(st?.sold, 0)}</small></div>
           <div className="br-row" style={{ color: "#ccc" }}><small>Money held {usdOf(st?.backing)}</small><small>{seiS(st?.backing)}</small></div>

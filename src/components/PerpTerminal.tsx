@@ -155,8 +155,7 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
   return (
     <div className="pd ux pt">
       <header className="pd-top">
-        <Link className="pd-brand" href="/"><span>patron<i>_</i></span></Link>
-        <div className="pd-actions">
+        <div className="pd-actions" style={{ marginLeft: "auto" }}>
           <span className={"ux-pill " + (live ? "ok" : "")}>{venue === "bnb" ? "BNB Chain · soon" : live === undefined ? "Loading…" : live ? `Live · ${vName}` : `${vName} unavailable`}</span>
           {venue === "hl" && <button className="pd-wallet pt-dep" onClick={() => setDep(true)}>Deposit</button>}
           <button className="pd-wallet" onClick={connect}>{addr ? short(addr) : "Connect Wallet"}</button>
