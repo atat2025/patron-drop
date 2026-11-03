@@ -1,4 +1,4 @@
-export const metadata = { title: "PATRON Lending · YouTube Revenue Financing", description: "Turn your future YouTube revenue into capital. PATRON Lending is in development." };
+export const metadata = { alternates: { canonical: "https://app.patron.red/lending/" }, title: "PATRON Lending · YouTube Revenue Financing", description: "Turn your future YouTube revenue into capital. Get an advance on your future YouTube revenue." };
 const H2: React.CSSProperties = { fontSize: 22, margin: "36px 0 10px" };
 export default function Page() {
   return (
@@ -6,8 +6,9 @@ export default function Page() {
       <img src="/lending/banner.webp" alt="PATRON LENDING" style={{ width: "100%", borderRadius: 18, display: "block" }} />
       <h1 style={{ fontSize: 34, margin: "28px 0 6px" }}>PATRON Lending: YouTube Revenue Financing</h1>
       <p style={{ fontSize: 19, opacity: .85, margin: 0 }}>Turn your future YouTube revenue into capital.</p>
-      <h2 style={H2}>Status</h2>
-      <p>PATRON Lending is in development. It is not yet open to applications. No funds are being lent through this service today.</p>
+      <section aria-label="PATRON LENDING screens" style={{ width: "min(1100px, calc(100vw - 40px))", position: "relative", left: "50%", transform: "translateX(-50%)", margin: "28px 0 8px" }}>
+        <img src="/lending/overview.webp" alt="PATRON LENDING — app (EN/JA), web and admin screens" loading="lazy" decoding="async" width={1400} height={3795} style={{ width: "100%", height: "auto", borderRadius: 18, display: "block" }} />
+      </section>
       <h2 style={H2}>What it is</h2>
       <p>PATRON Lending is a service that gives creators an advance against the future advertising revenue of a monetized YouTube channel. You connect your channel with read-only access through Google sign-in. We look at your published channel data and show an indicative value and a funding range. Repayment is a set percentage of your future monthly revenue, and the total repayment is capped.</p>
       <h2 style={H2}>How it will work (planned)</h2>
