@@ -27,11 +27,15 @@ function TileEl({ t, i }: { t: Tile; i: number }) {
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
-  useEffect(() => setDark(document.documentElement.getAttribute("data-theme") === "dark"), []);
+  useEffect(() => {
+    const apply = (window as Window & { __patronApplyTheme?: () => void }).__patronApplyTheme;
+    apply?.();
+    setDark(document.documentElement.getAttribute("data-theme") === "dark");
+  }, []);
   const flip = () => {
     const d = !dark; setDark(d);
-    if (d) document.documentElement.setAttribute("data-theme", "dark"); else document.documentElement.removeAttribute("data-theme");
     try { localStorage.setItem("patron-theme", d ? "dark" : "light"); } catch {}
+    if (d) document.documentElement.setAttribute("data-theme", "dark"); else document.documentElement.removeAttribute("data-theme");
   };
   return (
     <button className="sn-theme" onClick={flip} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Light mode" : "Dark mode"}>
@@ -65,7 +69,7 @@ export default function SiteNav() {
   return (
     <nav className="sn">
       <div className="sn-in">
-        <Link href="/" className="sn-brand" aria-label="PATRON — Human Asset Market, home"><svg viewBox="-20 -20 1405 486" width="28" aria-hidden><path d={MUSTACHE_PATH} fill="#ff0047" /></svg><span>PATRON <i>—</i> <small>Human Asset Market</small></span></Link>
+        <Link href="/" className="sn-brand" aria-label="Patron"><img className="sn-logo sn-logo-dark" src="/logos/patron-logo-tm-dark.svg" alt="Patron" height={30} /><img className="sn-logo sn-logo-light" src="/logos/patron-logo-tm-light.svg" alt="" height={30} /></Link>
         <div className="sn-links">{NAV.map((g) => g.items ? <Drop key={g.l} g={g} on={on} /> : <Link key={g.l} href={g.h!} className={on(g.h!) ? "on" : ""}>{g.l}</Link>)}</div>
         <ThemeToggle />
         <button className="sn-burger" aria-label="Menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}><span /><span /><span /></button>

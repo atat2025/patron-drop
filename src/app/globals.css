@@ -703,7 +703,7 @@ html[data-theme="dark"] .pf,html[data-theme="dark"] footer{background:#080a0d;co
 html[data-theme="dark"] .ux-logo,html[data-theme="dark"] .mkp-coin{background:#fff}
 html[data-theme="dark"] .ux-cbox,html[data-theme="dark"] .ux-chart{background:#10151e}
 /* nav: Human Asset Market */
-.sn-brand{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:16px}.sn-brand small{font-size:13px;font-weight:500;opacity:.75}
+.sn-brand{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:16px}.sn-brand small{font-size:13px;font-weight:500;opacity:.75}.sn-logo{height:30px;width:auto;display:block;flex:none}html[data-theme="dark"] .sn-logo-light{display:none}html:not([data-theme="dark"]) .sn-logo-dark{display:none}
 .sn-dd{position:relative}
 .sn-ddb{font:inherit;font-size:14px;font-weight:500;color:inherit;background:none;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
 .sn-ddb.on{color:#ff0047;background:#fff0f4}
