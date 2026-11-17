@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>PAT 流動性の配置（オーナー用）</title>
+<style>
+ body{font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:640px;margin:0 auto;padding:16px;color:#1a1a1a;line-height:1.6;background:#fafafa}
+ h1{font-size:20px;margin:8px 0 4px} h2{font-size:16px;margin:18px 0 6px}
+ .card{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:12px 14px;margin:10px 0}
+ table{width:100%;border-collapse:collapse;font-size:14px} td,th{padding:4px 6px;border-bottom:1px solid #eee;text-align:left}
+ #sim{padding:10px;border-radius:8px;background:#f2f2f2} #sim.ok{background:#e8f6ec;color:#11692f} #sim.ng{background:#fdecec;color:#a11}
+ #problems{display:none;background:#fdecec;color:#a11;padding:10px;border-radius:8px;margin:8px 0}
+ button{font-size:16px;padding:12px 16px;border-radius:10px;border:0;cursor:pointer}
+ #send{background:#c8102e;color:#fff;width:100%;margin-top:8px} #send:disabled{background:#bbb}
+ #reload{background:#eee;margin-top:6px} .small{font-size:13px;color:#555} code{word-break:break-all;font-size:12px}
+</style>
+</head>
+<body>
+<h1>PAT 流動性の配置（オーナー用）</h1>
+<p class="small">このページはオーナーのウォレットで1回だけ署名するためのものです。開くたびに最新の価格で取引を作り直し、送る前に結果を確認します。</p>
+<div class="card" id="spot">読み込み中…</div>
+
+<h2>1. 外すもの</h2>
+<div class="card"><ul id="remove" style="margin:0;padding-left:18px"></ul></div>
+
+<h2>2. 新しく置くもの（6か所）</h2>
+<div class="card">
+<table><thead><tr><th>#</th><th>価格の範囲</th><th style="text-align:right">PAT</th></tr></thead><tbody id="mints"></tbody></table>
+<p id="net" class="small"></p>
+</div>
+
+<h2>3. 値動きの目安（試算）</h2>
+<div class="card small">
+買いが合計でこれだけ入ると、価格はおよそこうなります（ETH・NVDAの値段が今のままの場合）。<br>
+1万ドル → 約0.10ドル ／ 5万ドル → 約0.20ドル ／ 10万ドル → 約0.23ドル ／ 50万ドル → 約0.50ドル ／ 100万ドル → 約0.65ドル ／ 500万ドル → 約1.55ドル
+</div>
+
+<h2>4. 送る</h2>
+<div class="card">
+<div id="problems"></div>
+<div id="sim">準備中…</div>
+<p id="deadline" class="small"></p>
+<p class="small">MetaMask に出る内容: 宛先 <b>0x58daec…4fa7</b>（Uniswap の PositionManager）、送金額 <b>0 ETH</b>。これ以外の宛先や金額なら、確認を押さないでください。</p>
+<button id="send" disabled>MetaMask で署名して送る</button>
+<button id="reload">最新の価格で作り直す</button>
+<p id="wallet" class="small"></p>
+<div id="result"></div>
+</div>
+<p class="small">置いたPATは、オーナーがいつでも引き出せます（ロックや焼却はしていません）。</p>
+<script src="./app.js"></script>
+</body>
+</html>
