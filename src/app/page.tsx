@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import PatCurvePage from "@/components/PatCurve";
+import RhBuyPage from "@/components/RhBuy";
 
-export const metadata: Metadata = { title: "Buy PAT on Sei · PATRON", alternates: { canonical: "./" } };
+export const metadata: Metadata = { title: "Buy PAT on Robinhood Chain · PATRON", alternates: { canonical: "./" } };
 
-/** Home is the same Sei mainnet Buy page as /pat/. */
+/** Home is the Robinhood Chain PAT buy page (ETH -> NVDA -> PAT, Uniswap PAT/NVDA pool). Sei buy page stays at /pat/. */
 export default function Page() {
-  return <PatCurvePage drop="/" />;
+  return <RhBuyPage drop="/" />;
 }

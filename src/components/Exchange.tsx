@@ -142,7 +142,8 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
 
         {tab === "PATRON" ? (
           <div className="ux-cards ux-pt">
-            <Link href="/pat/" className="mk-c live"><b>PATRON · Buy / Sell</b><span>Unisocks curve · price chart · staking</span><em>Sei · live →</em></Link>
+            <Link href="/" className="mk-c live"><b>PATRON · Buy</b><span>ETH → PAT · Uniswap PAT/NVDA pool</span><em>Robinhood Chain · live →</em></Link>
+            <Link href="/pat/" className="mk-c live"><b>PATRON on Sei · Buy / Sell</b><span>Unisocks curve · price chart · staking</span><em>Sei · live →</em></Link>
             <Link href="/vault/" className="mk-c live"><b>PATRON Vault · Deposit</b><span>Deposit PAT · auto-strategy · withdraw anytime</span><em>PatronVault 0x2Bc1…B664 · live →</em></Link>
           </div>
         ) : (
