@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow,noarchive">
+<title>PAT のロック（オーナー用・非公開）</title>
+<style>
+  :root { --bg:#080a0d; --card:#12141a; --line:#23262e; --text:#eee; --muted:#8a8a99; --red:#ff0047; --green:#2ecc71; --yellow:#e8c547; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  body { max-width:430px; margin:0 auto; padding:16px 16px 48px; line-height:1.55; }
+  h1 { font-size:18px; font-weight:600; margin:4px 0 2px; }
+  h2 { font-size:15px; font-weight:650; margin:22px 0 8px; }
+  .sub { font-size:12px; color:var(--muted); margin:0 0 12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:0 0 10px; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-variant-numeric:tabular-nums; font-size:14px; border-bottom:1px solid var(--line); }
+  .row:last-child { border-bottom:0; }
+  .row .k { color:var(--muted); flex:0 1 auto; }
+  .row .v { text-align:right; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+  th,td { text-align:left; padding:7px 4px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; font-size:11px; }
+  td.r,th.r { text-align:right; }
+  .warn { color:var(--yellow); }
+  .ok { color:var(--green); }
+  .err { background:#2a1216; color:#ff8a9a; border-radius:8px; padding:10px 12px; font-size:13px; margin:8px 0; }
+  .okbox { background:#102016; color:#9ee0b0; border-radius:8px; padding:10px 12px; font-size:13px; margin:8px 0; }
+  .sim { padding:10px 12px; border-radius:8px; background:#1a1c22; color:var(--muted); font-size:13px; margin:8px 0; }
+  .sim.ok { background:#102016; color:#9ee0b0; }
+  .sim.ng { background:#2a1216; color:#ff8a9a; }
+  button { font-size:16px; padding:12px 16px; border-radius:10px; border:0; cursor:pointer; width:100%; margin-top:8px; font-weight:600; }
+  button:disabled { background:#3a3d46; color:#7a7a86; cursor:not-allowed; }
+  .primary { background:#c8102e; color:#fff; }
+  .secondary { background:#23262e; color:#eee; }
+  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; }
+  input,select { width:100%; background:#0b0d11; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:16px; }
+  .pill { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 7px; border-radius:999px; border:1px solid var(--line); color:var(--muted); vertical-align:middle; margin-left:6px; }
+  .muted { color:var(--muted); font-size:12px; }
+  code { word-break:break-all; font-size:12px; }
+  a { color:#8ab4ff; }
+  .dur { display:flex; gap:8px; }
+  .dur input { flex:1; }
+  .dur select { flex:0 0 88px; }
+  .note { font-size:12px; color:var(--muted); margin:8px 0 0; }
+  #wallet, #customWallet { font-size:13px; margin-top:8px; min-height:1.4em; }
+</style>
+</head>
+<body>
+  <div class="sub">非公開の署名用ページです。<span class="pill">検索に出しません</span></div>
+  <h1>PAT のロック（オーナー用）</h1>
+  <p class="sub">Sablier でロックします。期間が終わるまで、オーナー自身も含めて引き出せません。途中で取り消すこともできません。</p>
+
+  <div class="card">
+    <div class="row"><div class="k">いまの残高</div><div class="v" id="bal">取得中…</div></div>
+    <div class="row"><div class="k">すでにロック中</div><div class="v" id="lockedSum">取得中…</div></div>
+    <div class="row"><div class="k">ガス用 ETH</div><div class="v" id="eth">取得中…</div></div>
+  </div>
+
+  <h2>いまのロック一覧</h2>
+  <div class="card" id="streams">取得中…</div>
+
+  <h2>今回の計画（プリセット）</h2>
+  <div class="card">
+    <p style="margin:0 0 8px">次の2つを、一度の承認（100,000,000 PAT）のあと、まとめて作ります。</p>
+    <div class="row"><div class="k">① 枚数</div><div class="v">50,000,000 PAT</div></div>
+    <div class="row"><div class="k">① ロック期間</div><div class="v">3か月（91日）</div></div>
+    <div class="row"><div class="k">① 解除日の目安</div><div class="v" id="unlock3">計算中…</div></div>
+    <div class="row"><div class="k">② 枚数</div><div class="v">50,000,000 PAT</div></div>
+    <div class="row"><div class="k">② ロック期間</div><div class="v">6か月（183日）</div></div>
+    <div class="row"><div class="k">② 解除日の目安</div><div class="v" id="unlock6">計算中…</div></div>
+    <p class="note">解除日は、署名した取引がチェーンに入った時刻から数えます。上は日本時間の目安です。どちらも途中で取り消せません。受け取り先はオーナーの同じウォレットです。</p>
+    <div id="presetSim" class="sim">準備中…</div>
+    <p class="muted">MetaMask に出る宛先: 1回目は PAT（承認）、2回目は Sablier（0x5481…ff0f）。送金額はどちらも 0 ETH です。ウォレットがまとめて送れる場合は1回で済みます。これ以外の宛先や金額なら、確認を押さないでください。</p>
+    <button id="presetSend" class="primary" disabled>事前チェックして、MetaMask で署名する</button>
+    <button id="presetReload" class="secondary">最新の状態で作り直す</button>
+    <p id="wallet"></p>
+    <div id="presetResult"></div>
+  </div>
+
+  <h2>追加でロックする</h2>
+  <div class="card">
+    <p class="note" style="margin-top:0">必要な分だけ承認してから、同じ条件（途中で取り消せない・解除後はオーナーへ戻る）で1件追加します。</p>
+    <label for="amt">枚数（PAT）</label>
+    <input id="amt" type="text" inputmode="decimal" placeholder="例: 10000000" autocomplete="off">
+    <label>ロック期間</label>
+    <div class="dur">
+      <input id="dur" type="number" min="1" step="1" placeholder="例: 3">
+      <select id="unit">
+        <option value="months">か月</option>
+        <option value="days">日</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:10px"><div class="k">実際の日数</div><div class="v" id="customDays">—</div></div>
+    <div class="row"><div class="k">解除日の目安</div><div class="v" id="customUnlock">—</div></div>
+    <p class="note">月は 1年=365.25日で換算します（3か月=91日、6か月=183日）。途中で取り消せません。</p>
+    <div id="customSim" class="sim">枚数と期間を入力してください。</div>
+    <button id="customSend" class="primary" disabled>追加ロックを署名する</button>
+    <button id="customReload" class="secondary">入力内容で事前チェックする</button>
+    <p id="customWallet"></p>
+    <div id="customResult"></div>
+  </div>
+
+  <p class="muted">Sablier Lockup v4.0（Robinhood Chain）。ロック期間のあと、トークンはオーナーのウォレットに戻せます。費用はガス代だけです。</p>
+  <script src="./app.js"></script>
+</body>
+</html>
