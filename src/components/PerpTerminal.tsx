@@ -26,7 +26,7 @@ function Logo({ base, size = 28 }: { base: string; size?: number }) {
 }
 
 type Venue = "monaco" | "hl" | "bnb";
-const VENUES: [Venue, string][] = [["monaco", "Sei (Monaco)"], ["hl", "Hyperliquid"]];
+const VENUES: [Venue, string][] = [["monaco", "Sei"], ["hl", "Hyperliquid"]];
 
 export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot" } = {}) {
   const spot = kind === "spot";
@@ -92,7 +92,7 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
   }, []);
   const m = markets.find((x) => x.id === sel) ?? markets[0];
   const mode = spot ? "SPOT" : "MARGIN";
-  const vName = venue === "hl" ? "Hyperliquid" : "Monaco";
+  const vName = venue === "hl" ? "Hyperliquid" : "Sei";
   const maxLev = venue === "hl" ? ((m as HlMarket | undefined)?.maxLev ?? 50) : MAX_LEV;
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
   const flash = (ok: boolean, t: string) => { setToast({ ok, t }); setTimeout(() => setToast(null), 7000); };
   const soon = () => setModal(venue === "hl"
     ? "Hyperliquid trading is coming soon. Prices, chart and order book here are live from Hyperliquid."
-    : "Monaco trading opens after mainnet access. Prices, chart and order book here are live from Monaco.");
+    : "Trading opens after mainnet access. Prices, chart and order book here are live from Sei.");
   const connect = async () => { if (!canTrade || venue !== "monaco") return soon(); try { setAddr(await connectWallet()); flash(true, "Wallet connected"); } catch (e) { flash(false, (e as Error).message.split("\n")[0]); } };
   const [ask, setAsk] = useState<"BUY" | "SELL" | null>(null);
   const [sending, setSending] = useState(false);
@@ -166,7 +166,7 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
         {VENUES.map(([k, l]) => <button key={k} role="tab" aria-selected={venue === k} className={venue === k ? "on" : ""} onClick={() => { setVenue(k); setPick(false); }}>{l}{k === "bnb" && <small> soon</small>}</button>)}
       </div>
       {venue === "bnb" ? (
-        <section className="pt-soon"><h2>BNB Chain — coming soon</h2><p>{spot ? "Spot" : "PERP"} trading on BNB Chain is on the way. Meanwhile, use Sei (Monaco) or Hyperliquid above.</p></section>
+        <section className="pt-soon"><h2>BNB Chain — coming soon</h2><p>{spot ? "Spot" : "PERP"} trading on BNB Chain is on the way. Meanwhile, use Sei or Hyperliquid above.</p></section>
       ) : <>
       {/* Market bar */}
       <div className="pt-bar">
@@ -240,10 +240,10 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
           {ctab === "CHART" && <>
             <div className="ux-tf">{TFS.map((x) => <button key={x} className={tf === x ? "on" : ""} onClick={() => setTf(x)}>{TFN[x] ?? x}</button>)}</div>
             <div className="ux-cbox pt-cbox"><LwChart candles={candles} resetKey={(m?.id ?? "") + tf} /></div>
-            {m && <small className="ux-mut">{venue === "hl" ? `${TFL[tf]} chart · Hyperliquid` : candleSource[m.id] === "reference" ? `${TFL[tf]} chart · reference price (Hyperliquid), because Monaco prints are thin or noisy. Orders fill on Monaco.` : `${TFL[tf]} chart · Monaco trades`}</small>}
+            {m && <small className="ux-mut">{venue === "hl" ? `${TFL[tf]} chart · Hyperliquid` : candleSource[m.id] === "reference" ? `${TFL[tf]} chart · reference price (Hyperliquid), because Sei prints are thin or noisy. Orders fill on Sei.` : `${TFL[tf]} chart · Sei trades`}</small>}
           </>}
-          {ctab === "OVERVIEW" && m && <div className="pt-ov"><Logo base={m.base} size={56} /><h2>{(NAMES[m.base] ?? m.base).replace(/\s[^\x00-\x7F].*$/, "")}</h2><p>{spot ? `${m.symbol} spot on ${venue === "hl" ? "Hyperliquid" : "Monaco (Sei)"}. Buy and sell real ${m.base} for USDC — no leverage.` : `${m.symbol} perpetual on ${venue === "hl" ? "Hyperliquid" : "Monaco (Sei)"}. Trade price moves of ${m.base} in USDC — up (Long) or down (Short) — without owning it. Leverage up to ${maxLev}x multiplies both wins and losses.`}</p></div>}
-          {ctab === "DATA" && <dl className="pt-kv pt-data"><dt>Mark price</dt><dd>{fp(stats?.mark ?? 0)}</dd><dt>Index price</dt><dd>{fp(stats?.index ?? 0)}</dd><dt>24h volume</dt><dd>{fk(stats?.volume ?? 0)} USDC</dd>{!spot && <><dt>Open interest</dt><dd>{fk(stats?.oi ?? 0)}</dd><dt>Funding rate</dt><dd>{((stats?.funding ?? 0) * 100).toFixed(4)}%</dd><dt>Next funding</dt><dd>{cds}</dd><dt>Max leverage</dt><dd>{maxLev}x</dd></>}<dt>Chart data</dt><dd>{venue === "hl" ? "Hyperliquid" : m && candleSource[m.id] === "reference" ? "Hyperliquid (reference)" : "Monaco"}</dd></dl>}
+          {ctab === "OVERVIEW" && m && <div className="pt-ov"><Logo base={m.base} size={56} /><h2>{(NAMES[m.base] ?? m.base).replace(/\s[^\x00-\x7F].*$/, "")}</h2><p>{spot ? `${m.symbol} spot on ${venue === "hl" ? "Hyperliquid" : "Sei"}. Buy and sell real ${m.base} for USDC — no leverage.` : `${m.symbol} perpetual on ${venue === "hl" ? "Hyperliquid" : "Sei"}. Trade price moves of ${m.base} in USDC — up (Long) or down (Short) — without owning it. Leverage up to ${maxLev}x multiplies both wins and losses.`}</p></div>}
+          {ctab === "DATA" && <dl className="pt-kv pt-data"><dt>Mark price</dt><dd>{fp(stats?.mark ?? 0)}</dd><dt>Index price</dt><dd>{fp(stats?.index ?? 0)}</dd><dt>24h volume</dt><dd>{fk(stats?.volume ?? 0)} USDC</dd>{!spot && <><dt>Open interest</dt><dd>{fk(stats?.oi ?? 0)}</dd><dt>Funding rate</dt><dd>{((stats?.funding ?? 0) * 100).toFixed(4)}%</dd><dt>Next funding</dt><dd>{cds}</dd><dt>Max leverage</dt><dd>{maxLev}x</dd></>}<dt>Chart data</dt><dd>{venue === "hl" ? "Hyperliquid" : m && candleSource[m.id] === "reference" ? "Hyperliquid (reference)" : "Sei"}</dd></dl>}
         </section>
 
         {/* Book / trades */}
@@ -278,7 +278,7 @@ export default function PerpTerminal({ kind = "perp" }: { kind?: "perp" | "spot"
       {/* Ticker */}
       <div className="pt-ticker" ref={ticker}><div>{[...markets, ...markets].map((x, i) => <button key={i} onClick={() => setSel(x.id)}><Logo base={x.base} size={16} /><b>{x.symbol.replace("/", "")}</b><em className={x.change24h >= 0 ? "up" : "dn"}>{`${x.change24h >= 0 ? "+" : ""}${x.change24h.toFixed(2)}%`}</em></button>)}</div></div>
       {dep && <HlDeposit onClose={() => setDep(false)} />}
-      {ask && m && <div className="pt-modal" onClick={() => !sending && setAsk(null)}><div onClick={(e) => e.stopPropagation()}><h3>Confirm order</h3><p>{ask === "BUY" ? (spot ? "Buy" : "Long") : (spot ? "Sell" : "Short")} {qty} {m.base} · {otype === "LIMIT" ? `limit ${price}` : "market"}{spot ? "" : ` · ${lev}x`} on Monaco (Sei mainnet). Your wallet signs it. Real funds, you can lose money.</p><button className="pt-buy" disabled={sending} onClick={send}>{sending ? "Sending…" : "Place order"}</button> <button className="pt-sell" disabled={sending} onClick={() => setAsk(null)}>Cancel</button></div></div>}
+      {ask && m && <div className="pt-modal" onClick={() => !sending && setAsk(null)}><div onClick={(e) => e.stopPropagation()}><h3>Confirm order</h3><p>{ask === "BUY" ? (spot ? "Buy" : "Long") : (spot ? "Sell" : "Short")} {qty} {m.base} · {otype === "LIMIT" ? `limit ${price}` : "market"}{spot ? "" : ` · ${lev}x`} on Sei mainnet. Your wallet signs it. Real funds, you can lose money.</p><button className="pt-buy" disabled={sending} onClick={send}>{sending ? "Sending…" : "Place order"}</button> <button className="pt-sell" disabled={sending} onClick={() => setAsk(null)}>Cancel</button></div></div>}
       {modal && <div className="pt-modal" onClick={() => setModal(null)}><div onClick={(e) => e.stopPropagation()}><h3>Coming soon</h3><p>{modal}</p><button className="pt-buy" onClick={() => setModal(null)}>OK</button></div></div>}
       {toast && <div className="pd-toast" style={{ background: toast.ok ? undefined : "#c00" }}>{toast.t}</div>}
     </div>

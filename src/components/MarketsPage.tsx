@@ -74,7 +74,7 @@ export default function MarketsPage() {
           <Row href="/" logo={<span className="mkp-pat"><Mustache size={26} /></span>} sym="PAT" name="PATRON · Sei" price={pat ? fmtUsd(pat * usd) : undefined} />
           {list(DA)}
         </section>
-        <p className="mkp-note">Live prices from Monaco (Sei). Tap a market to open it. Trading opens soon.</p>
+        <p className="mkp-note">Live prices from Sei. Tap a market to open it. Trading opens soon.</p>
       </main>
     </div>
   );

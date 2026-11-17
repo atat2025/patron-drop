@@ -101,7 +101,7 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
         await eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: "0x530", chainName: "Sei Testnet (atlantic-2)", nativeCurrency: { name: "SEI", symbol: "SEI", decimals: 18 }, rpcUrls: [config.seiRpcUrl], blockExplorerUrls: ["https://seitrace.com"] }] }).catch(() => {});
         await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x530" }] }).catch(() => {});
       }
-      const a = await connectWallet(); setAddr(a); flash(true, canTrade ? "Signed in to Monaco" : "Wallet connected. Trading opens soon.");
+      const a = await connectWallet(); setAddr(a); flash(true, canTrade ? "Signed in to Sei" : "Wallet connected. Trading opens soon.");
     } catch (e) { flash(false, (e as Error).message.split("\n")[0]); }
   };
   const submit = async () => {
@@ -135,14 +135,14 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
       </header>
       <main className="ux-main">
         <div className="ux-head">
-          <h1>{perpOnly ? "PERP" : "PATRON Powered by Monaco"}</h1>
+          <h1>{perpOnly ? "PERP" : "PATRON Powered by Sei"}</h1>
           {!perpOnly && <div className="ux-seg">{(["SPOT", "PERP", "PATRON"] as Tab[]).map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => { setTab(t); setSel(""); }}>{t}</button>)}</div>}
-          {tab !== "PATRON" && <span className={"ux-pill " + (live ? "ok" : "")}>{live === undefined ? "Loading…" : live ? (perpOnly ? "Live prices · Monaco" : "Live · Monaco " + config.network) : config.network === "mainnet" ? "Monaco unavailable" : "Monaco unavailable · sample"}</span>}
+          {tab !== "PATRON" && <span className={"ux-pill " + (live ? "ok" : "")}>{live === undefined ? "Loading…" : live ? (perpOnly ? "Live prices · Sei" : "Live · Sei " + config.network) : config.network === "mainnet" ? "Sei unavailable" : "Sei unavailable · sample"}</span>}
         </div>
 
         {tab === "PATRON" ? (
           <div className="ux-cards ux-pt">
-            <Link href="/" className="mk-c live"><b>PATRON · Buy / Sell</b><span>Unisocks curve · price chart · staking</span><em>Sei testnet · live →</em></Link>
+            <Link href="/pat/" className="mk-c live"><b>PATRON · Buy / Sell</b><span>Unisocks curve · price chart · staking</span><em>Sei · live →</em></Link>
             <Link href="/vault/" className="mk-c live"><b>PATRON Vault · Deposit</b><span>Deposit PAT · auto-strategy · withdraw anytime</span><em>PatronVault 0x2Bc1…B664 · live →</em></Link>
           </div>
         ) : (
@@ -163,7 +163,7 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
               <div className="ux-ph"><h2>{m?.symbol ?? "—"} <small>{tab === "PERP" ? "Perpetual" : "Spot"}</small></h2><b>{fp(last)}</b></div>
               <div className="ux-tf">{TFS.map((x) => <button key={x} className={tf === x ? "on" : ""} onClick={() => setTf(x)}>{TFN[x] ?? x}</button>)}</div>
               <div className="ux-cbox"><LwChart candles={candles} resetKey={(m?.id ?? "") + tf} /></div>
-              {m && <small className="ux-mut">{candleSource[m.id] === "reference" ? `${TFL[tf]} chart · reference price (Hyperliquid), because Monaco prints are thin or noisy. Orders fill on Monaco.` : `${TFL[tf]} chart · Monaco trades`}</small>}
+              {m && <small className="ux-mut">{candleSource[m.id] === "reference" ? `${TFL[tf]} chart · reference price (Hyperliquid), because Sei prints are thin or noisy. Orders fill on Sei.` : `${TFL[tf]} chart · Sei trades`}</small>}
             </section>
 
             <section className="ux-card ux-order">
@@ -172,7 +172,7 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
               {otype === "LIMIT" && <label className="ux-inp"><span>Price</span><input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={fp(last)} inputMode="decimal" /><em>{m?.quote}</em></label>}
               <label className="ux-inp"><span>Size</span><input value={qty} onChange={(e) => setQty(e.target.value)} placeholder="0.0" inputMode="decimal" /><em>{m?.base}</em></label>
               {tab === "PERP" && <label className="ux-inp"><span>Leverage</span><select value={lev} onChange={(e) => setLev(e.target.value)}>{[1, 2, 3, 5, 10, 20].map((l) => <option key={l} value={l}>{l}x</option>)}</select></label>}
-              {perpOnly && !canTrade && <div className="pd-err" style={{ margin: "6px 0" }}>Trading opens soon. Prices, chart and order book are live from Monaco.</div>}
+              {perpOnly && !canTrade && <div className="pd-err" style={{ margin: "6px 0" }}>Trading opens soon. Prices, chart and order book are live from Sei.</div>}
               <button className="pd-buy" disabled={(!!addr && !canTrade) || busy || (!!addr && (!qty || (otype === "LIMIT" && !price)))} onClick={submit}>{!addr ? "Connect Wallet" : busy ? "Waiting…" : `${side === "BUY" ? (tab === "PERP" ? "Long" : "Buy") : (tab === "PERP" ? "Short" : "Sell")} ${m?.base ?? ""}`}</button>
               <p className="ux-mut">{tab === "PERP" ? "Long = you win if the price goes up. Short = you win if it goes down. Leverage multiplies wins and losses. " : ""}Orders are signed by your own wallet. {config.network !== "mainnet" && "Testnet funds only."}</p>
             </section>
@@ -199,7 +199,7 @@ export default function Exchange({ perpOnly = false }: { perpOnly?: boolean } = 
                   <input value={depAmt} onChange={(e) => setDepAmt(e.target.value)} placeholder="Amount" inputMode="decimal" />
                   <button className="pd-sec" disabled={busy || !depAmt} onClick={deposit}>Deposit</button>
                 </div>
-                <p className="ux-mut">Need test tokens? Use the <a href="https://app.monaco.xyz" target="_blank" rel="noreferrer">Monaco testnet faucet</a> and <a href="https://docs.sei.io/learn/faucet" target="_blank" rel="noreferrer">Sei faucet</a>.</p>
+                {config.network !== "mainnet" && <p className="ux-mut">Need test tokens? Use the <a href="https://app.monaco.xyz" target="_blank" rel="noreferrer">testnet faucet</a> and <a href="https://docs.sei.io/learn/faucet" target="_blank" rel="noreferrer">Sei faucet</a>.</p>}
                 <h3>Balances</h3>
                 {bals.length ? bals.map((b) => <div key={b.assetId} className="ux-row"><b>{b.symbol}</b><span>{b.available}</span><span className="ux-mut">locked {b.locked}</span></div>) : <p className="ux-mut">No balances</p>}
                 <h3>Open orders</h3>

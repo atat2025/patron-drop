@@ -1,4 +1,9 @@
-import PatronDrop from "@/components/PatronDrop";
-import PatHome from "@/components/PatHome";
-/** Mainnet home = original layout on Sei mainnet PatCurve. Testnet keeps the old page. */
-export default function Page() { return process.env.NEXT_PUBLIC_PATRON_NETWORK === "mainnet" ? <PatHome /> : <PatronDrop />; }
+import type { Metadata } from "next";
+import PatCurvePage from "@/components/PatCurve";
+
+export const metadata: Metadata = { title: "Buy PAT on Sei · PATRON", alternates: { canonical: "./" } };
+
+/** Home is the same Sei mainnet Buy page as /pat/. */
+export default function Page() {
+  return <PatCurvePage drop="/" />;
+}
