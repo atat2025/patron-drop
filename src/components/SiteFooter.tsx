@@ -5,7 +5,7 @@ export default function SiteFooter() {
     <footer className="pf">
       <nav>
         <Link href="/">PATRON</Link>
-        <Link href="/pat/">Buy PAT</Link>
+        <Link href="/">Buy PAT</Link>
         <Link href="/vault/">Automated trading</Link>
         <Link href="/perp/">PERP</Link>
         <Link href="/spot/">Spot</Link>

@@ -18,7 +18,7 @@ export default function RhBuyPage({ drop = "/" }: { drop?: string }) {
   const [spot, setSpot] = useState<Awaited<ReturnType<typeof R.readSpot>>>();
   const [me, setMe] = useState<Address | null>(null);
   const [bal, setBal] = useState<{ pat?: bigint; eth?: bigint }>({});
-  const [amt, setAmt] = useState("");
+  const [amt, setAmt] = useState("100");
   const [q, setQ] = useState<{ nvda: bigint; pat: bigint }>();
   const [qErr, setQErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -33,15 +33,14 @@ export default function RhBuyPage({ drop = "/" }: { drop?: string }) {
   useEffect(() => { R.ethUsd().then(setUsd); const t = setInterval(() => R.ethUsd().then((v) => v && setUsd(v)), 60000); return () => clearInterval(t); }, []);
 
   const priceUsd = spot && usd ? spot.ethPerPat * usd : 0;
-  const ethFor = (dollars: number) => (usd ? (dollars / usd).toFixed(6).replace(/0+$/, "") : "");
-  useEffect(() => { if (!amt && usd) setAmt(ethFor(10)); }, [usd]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  let wei = 0n; try { wei = amt ? parseEther(amt) : 0n; } catch {}
+  const PRESETS = [100, 500, 1000];
+  const dollars = Number(amt) || 0;
+  let wei = 0n; try { wei = dollars > 0 && usd > 0 ? parseEther((dollars / usd).toFixed(12)) : 0n; } catch {}
   useEffect(() => {
     setQ(undefined); setQErr(null); if (wei <= 0n) return;
     const t = setTimeout(async () => { try { setQ(await R.quote(wei)); } catch (e) { setQErr(friendlyErr(e)); } }, 300);
     return () => clearTimeout(t);
-  }, [amt, spot]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [amt, spot, usd]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const avgUsd = q && q.pat > 0n && usd ? (Number(formatEther(wei)) * usd) / Number(formatEther(q.pat)) : 0;
   const impact = avgUsd && priceUsd ? (avgUsd / priceUsd - 1) * 100 : 0;
@@ -54,7 +53,7 @@ export default function RhBuyPage({ drop = "/" }: { drop?: string }) {
   const go = async () => {
     setMsg(null);
     if (!ok) { setMsg({ ok: false, t: "Check the risk box above first." }); return; }
-    if (wei <= 0n) { setMsg({ ok: false, t: "Enter how much ETH you want to spend." }); return; }
+    if (wei <= 0n) { setMsg({ ok: false, t: usd ? "Enter how many dollars you want to spend." : "Still loading the ETH price — wait a second and try again." }); return; }
     setBusy(true);
     try {
       setStep("Connect wallet…");
@@ -94,9 +93,10 @@ export default function RhBuyPage({ drop = "/" }: { drop?: string }) {
           <div className="br-row" style={{ color: "#ccc" }}><small>1 ETH buys about</small><small>{spot ? `${Math.round(1 / spot.ethPerPat).toLocaleString("en-US")} PAT at today’s price` : "…"}</small></div>
         </section>
         <section className="pv-card">
-          <small>How much ETH do you want to spend?</small>
-          <div className="pd-tabs">{[5, 10, 25, 100].map((d) => <button key={d} onClick={() => setAmt(ethFor(d))}>${d}</button>)}</div>
-          <div className="pv-inp"><input inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value.replace(",", "."))} /><span>ETH</span></div>
+          <small>How much do you want to spend?</small>
+          <div className="pd-tabs">{PRESETS.map((d) => <button key={d} className={dollars === d ? "on" : ""} onClick={() => setAmt(String(d))}>${d.toLocaleString("en-US")}</button>)}</div>
+          <small>Or type any amount (USD)</small>
+          <div className="pv-inp"><input inputMode="decimal" placeholder="Type an amount" aria-label="Amount in US dollars" value={amt} onChange={(e) => setAmt(e.target.value.replace(",", ".").replace(/[^0-9.]/g, ""))} /><span>USD</span></div>
           {me && <div className="br-row"><small>Your ETH on Robinhood Chain</small><small>{eth(bal.eth)}</small></div>}
           {me && <div className="br-row"><small>Your PAT on Robinhood Chain</small><small>{pat(bal.pat, 4)}</small></div>}
           <div className="br-row"><small>You pay</small><span style={{ textAlign: "right" }}><b>{wei > 0n && usd ? fmtUsd(Number(formatEther(wei)) * usd) : "…"}</b><br /><small>{wei > 0n ? eth(wei) : ""}</small></span></div>
