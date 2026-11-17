@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Sei PATカーブを止める（オーナー用）</title>
+<style>
+ body{font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:640px;margin:0 auto;padding:16px;color:#1a1a1a;line-height:1.6;background:#fafafa}
+ h1{font-size:20px;margin:8px 0 4px} h2{font-size:16px;margin:18px 0 6px}
+ .card{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:12px 14px;margin:10px 0}
+ table{width:100%;border-collapse:collapse;font-size:14px} td,th{padding:4px 6px;border-bottom:1px solid #eee;text-align:left} td.r,th.r{text-align:right}
+ .sim{padding:10px;border-radius:8px;background:#f2f2f2;margin:8px 0} .sim.ok{background:#e8f6ec;color:#11692f} .sim.ng{background:#fdecec;color:#a11}
+ .warn{background:#fff6e5;color:#7a4a00;padding:10px;border-radius:8px;margin:8px 0}
+ .okbox{background:#e8f6ec;color:#11692f;padding:10px;border-radius:8px;margin:8px 0}
+ button{font-size:16px;padding:12px 16px;border-radius:10px;border:0;cursor:pointer}
+ .send{background:#c8102e;color:#fff;width:100%;margin-top:8px} .send:disabled{background:#bbb;cursor:not-allowed}
+ .secondary{background:#eee;margin-top:6px;width:100%}
+ .small{font-size:13px;color:#555} code{word-break:break-all;font-size:12px}
+ .step{border-left:3px solid #c8102e;padding-left:10px;margin:12px 0}
+ .done{border-left-color:#11692f}
+</style>
+</head>
+<body>
+<h1>Sei PATカーブを止める（オーナー用）</h1>
+<p class="small">このページはオーナーのウォレットで署名するための非公開ページです。検索にも出ません。開くたびに最新の残高を読み、送る前に事前チェックをします。</p>
+
+<div class="card" id="state">読み込み中…</div>
+<div class="card">
+  <button class="secondary" id="connect">ウォレットを接続する</button>
+  <p id="wallet" class="small"></p>
+</div>
+
+<h2>第1段階：購入を止めて、在庫と手数料を戻す</h2>
+<p class="small">これで誰も新しく買えなくなります。残っているPATと、すでに貯まっている手数料のSEIがオーナーのウォレットに戻ります。すでに売った分のSEI（買い戻し用）は、この段階ではまだプールに残ります。</p>
+
+<div class="card step" id="s1">
+  <b>1. 購入を停止する</b>
+  <p class="small">呼び出す関数: <code>setPaused(true)</code>。売却（売り戻し）は開いたままです。</p>
+  <div class="sim" id="sim1">準備中…</div>
+  <p class="small">MetaMask に出る内容: 宛先 <b>0x88b1de…C99B</b>（PatCurve）、送金額 <b>0 SEI</b>。これ以外の宛先や金額なら、確認を押さないでください。</p>
+  <button class="send" id="send1" disabled>1. 購入を停止する（署名）</button>
+  <div id="res1"></div>
+</div>
+
+<div class="card step" id="s2">
+  <b>2. 残っているPATを戻す</b>
+  <p class="small" id="desc2">呼び出す関数: <code>withdrawInventory(オーナー, 在庫すべて)</code>。</p>
+  <div class="sim" id="sim2">準備中…</div>
+  <p class="small">MetaMask に出る内容: 宛先 <b>0x88b1de…C99B</b>、送金額 <b>0 SEI</b>。</p>
+  <button class="send" id="send2" disabled>2. PATを戻す（署名）</button>
+  <div id="res2"></div>
+</div>
+
+<div class="card step" id="s3">
+  <b>3. 手数料のSEIを戻す</b>
+  <p class="small" id="desc3">呼び出す関数: <code>withdrawFees(オーナー)</code>。買い戻し用のSEIは引き出せません。</p>
+  <div class="sim" id="sim3">準備中…</div>
+  <p class="small">MetaMask に出る内容: 宛先 <b>0x88b1de…C99B</b>、送金額 <b>0 SEI</b>。</p>
+  <button class="send" id="send3" disabled>3. 手数料を戻す（署名）</button>
+  <div id="res3"></div>
+</div>
+
+<h2>第2段階（任意）：残りのSEIを回収する</h2>
+<div class="warn">
+  コントラクトには、買い戻し用のSEI（いま約221 SEI）を直接引き出す関数はありません。回収するには、オーナーが「すでに売れた枚数」と同じPATをカーブに売り戻す必要があります。<br><br>
+  <b>注意:</b> これを行うと、カーブからPATを買った人がいた場合、その人はもう売り戻せなくなります（売却も止まります）。第1段階だけでも購入は止まります。残りのSEIを回収して、完全に空にしたいときだけ進めてください。
+</div>
+
+<div class="card step" id="s4">
+  <b>4. 売り戻しの許可</b>
+  <p class="small" id="desc4">PATコントラクトで <code>approve(カーブ, 売れた枚数)</code> をします。</p>
+  <div class="sim" id="sim4">準備中…</div>
+  <p class="small">MetaMask に出る内容: 宛先 <b>0x3d9C71…4e95</b>（SeiのPAT）、送金額 <b>0 SEI</b>。</p>
+  <button class="send" id="send4" disabled>4. 許可する（署名）</button>
+  <div id="res4"></div>
+</div>
+
+<div class="card step" id="s5">
+  <b>5. PATを売り戻してSEIを受け取る</b>
+  <p class="small" id="desc5">呼び出す関数: <code>sell(売れた枚数, …)</code>。手数料を除いたSEIがオーナーに入ります。</p>
+  <div class="sim" id="sim5">準備中…</div>
+  <p class="small">MetaMask に出る内容: 宛先 <b>0x88b1de…C99B</b>、送金額 <b>0 SEI</b>。</p>
+  <button class="send" id="send5" disabled>5. 売り戻す（署名）</button>
+  <div id="res5"></div>
+</div>
+
+<div class="card step" id="s6">
+  <b>6. 売り戻したPATを再び引き出す</b>
+  <p class="small">売り戻すとPATがカーブに戻るので、もう一度 <code>withdrawInventory</code> します。</p>
+  <div class="sim" id="sim6">準備中…</div>
+  <p class="small">MetaMask に出る内容: 宛先 <b>0x88b1de…C99B</b>、送金額 <b>0 SEI</b>。</p>
+  <button class="send" id="send6" disabled>6. 戻ったPATを引き出す（署名）</button>
+  <div id="res6"></div>
+</div>
+
+<div class="card step" id="s7">
+  <b>7. 売り戻しの手数料を引き出す</b>
+  <p class="small">呼び出す関数: <code>withdrawFees(オーナー)</code>。</p>
+  <div class="sim" id="sim7">準備中…</div>
+  <p class="small">MetaMask に出る内容: 宛先 <b>0x88b1de…C99B</b>、送金額 <b>0 SEI</b>。</p>
+  <button class="send" id="send7" disabled>7. 残りの手数料を戻す（署名）</button>
+  <div id="res7"></div>
+</div>
+
+<p class="small">ガス代の目安は、全部で約 0.02 SEI です。オーナーのSEI残高がそれより少ない場合は、先に少しSEIを入れてください。署名はすべて久積様ご自身のウォレットで行います。</p>
+<button class="secondary" id="reload">最新の状態で作り直す</button>
+<script src="./app.js"></script>
+</body>
+</html>
