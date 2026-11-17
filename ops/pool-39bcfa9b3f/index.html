@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="googlebot" content="noindex,nofollow,noarchive">
-<title>PAT の板と流動性（非公開）</title>
+<title>PAT のプール管理（非公開）</title>
 <style>
   :root { --bg:#080a0d; --card:#12141a; --line:#23262e; --text:#eee; --muted:#8a8a99; --red:#ff0047; --green:#2ecc71; --yellow:#e8c547; }
   * { box-sizing:border-box; }
@@ -42,14 +42,24 @@
   .status { font-size:11px; color:var(--muted); margin-top:12px; text-align:center; }
   .empty { color:var(--muted); font-size:12px; margin-top:8px; word-break:break-all; }
   .pos-id { color:var(--muted); font-size:11px; }
+  .pill.in { border-color:var(--green); color:var(--green); }
+  .pill.out { border-color:var(--yellow); color:var(--yellow); }
+  .sec { font-size:15px; font-weight:650; margin:26px 0 2px; padding-top:14px; border-top:1px solid var(--line); }
+  .sec:first-of-type { border-top:0; }
 </style>
 </head>
 <body>
   <div class="sub">非公開の確認用ページです。<span class="pill">検索に出しません</span></div>
-  <h1>PAT の板と流動性</h1>
-  <p class="sub">PAT / NVDA プール（Robinhood Chain）</p>
+  <h1>PAT のプール管理</h1>
+  <p class="sub">PAT / NVDA プールと PAT / WETH プール（Robinhood Chain）</p>
 
   <div id="err" class="err" style="display:none"></div>
+
+  <h2>2つのプールの価格くらべ</h2>
+  <div class="card" id="compare">取得中…</div>
+
+  <div class="sec">① PAT / NVDA プール</div>
+  <p class="sub">Uniswap v4・メインのプール</p>
 
   <h2>いまの価格とプールの合計</h2>
   <div class="card" id="summary">取得中…</div>
@@ -62,6 +72,20 @@
 
   <h2>オーナーのポジション</h2>
   <div class="card" id="positions">取得中…</div>
+
+  <div class="sec">② PAT / WETH プール</div>
+  <p class="sub">Uniswap v3・手数料 0.3%・ボットが管理</p>
+
+  <div id="werr" class="err" style="display:none"></div>
+
+  <h2>いまの価格とプールの合計</h2>
+  <div class="card" id="wsummary">取得中…</div>
+
+  <h2>ボット用ウォレットのポジション</h2>
+  <div class="card" id="wpositions">取得中…</div>
+
+  <h2>ボット用ウォレットの残高</h2>
+  <div class="card" id="wwallet">取得中…</div>
 
   <p class="status" id="status">チェーンから数字を読み込んでいます…</p>
   <script src="./app.js"></script>
