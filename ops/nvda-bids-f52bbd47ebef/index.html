@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="googlebot" content="noindex,nofollow,noarchive">
+<title>NVDA の買い板を積む（オーナー用・非公開）</title>
+<style>
+  :root { --bg:#080a0d; --card:#12141a; --line:#23262e; --text:#eee; --muted:#8a8a99; --red:#ff0047; --green:#2ecc71; --yellow:#e8c547; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  body { max-width:430px; margin:0 auto; padding:16px 16px 48px; line-height:1.55; }
+  h1 { font-size:18px; font-weight:600; margin:4px 0 2px; }
+  h2 { font-size:15px; font-weight:650; margin:22px 0 8px; }
+  .sub { font-size:12px; color:var(--muted); margin:0 0 12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:0 0 10px; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-variant-numeric:tabular-nums; font-size:14px; border-bottom:1px solid var(--line); }
+  .row:last-child { border-bottom:0; }
+  .row .k { color:var(--muted); flex:0 1 auto; }
+  .row .v { text-align:right; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+  th,td { text-align:left; padding:7px 4px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; font-size:11px; }
+  td.r,th.r { text-align:right; }
+  .err { background:#2a1216; color:#ff8a9a; border-radius:8px; padding:10px 12px; font-size:13px; margin:8px 0; }
+  .okbox { background:#102016; color:#9ee0b0; border-radius:8px; padding:10px 12px; font-size:13px; margin:8px 0; }
+  .sim { padding:10px 12px; border-radius:8px; background:#1a1c22; color:var(--muted); font-size:13px; margin:8px 0; }
+  .sim.ok { background:#102016; color:#9ee0b0; }
+  .sim.ng { background:#2a1216; color:#ff8a9a; }
+  button { font-size:16px; padding:12px 16px; border-radius:10px; border:0; cursor:pointer; width:100%; margin-top:8px; font-weight:600; }
+  button:disabled { background:#3a3d46; color:#7a7a86; cursor:not-allowed; }
+  .primary { background:#c8102e; color:#fff; }
+  .secondary { background:#23262e; color:#eee; }
+  .pill { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 7px; border-radius:999px; border:1px solid var(--line); color:var(--muted); vertical-align:middle; margin-left:6px; }
+  .muted { color:var(--muted); font-size:12px; }
+  .note { font-size:12px; color:var(--muted); margin:8px 0 0; }
+  code { word-break:break-all; font-size:12px; }
+  a { color:#8ab4ff; }
+  #wallet { font-size:13px; margin-top:8px; min-height:1.4em; }
+</style>
+</head>
+<body>
+  <div class="sub">非公開の署名用ページです。<span class="pill">検索に出しません</span></div>
+  <h1>NVDA の買い板を積む（オーナー用）</h1>
+  <p class="sub">いまの価格より下に、ウォレットにある NVDA を買い板として置きます。PAT は使いません。価格そのものは、この取引では変わりません。あとから取り出すこともできます（ロックではありません）。</p>
+
+  <div class="card">
+    <div class="row"><div class="k">いまの PAT の価格</div><div class="v" id="spot">取得中…</div></div>
+    <div class="row"><div class="k">ウォレットの NVDA</div><div class="v" id="nvda">取得中…</div></div>
+    <div class="row"><div class="k">ガス用 ETH</div><div class="v" id="eth">取得中…</div></div>
+  </div>
+
+  <h2>今回の置き方</h2>
+  <div class="card">
+    <div class="row"><div class="k">置く範囲</div><div class="v" id="range">計算中…</div></div>
+    <div class="row"><div class="k">使う NVDA</div><div class="v" id="used">計算中…</div></div>
+    <div class="row"><div class="k">ウォレットに残す分</div><div class="v" id="dust">計算中…</div></div>
+    <div class="row"><div class="k">買い板の合計（いま）</div><div class="v" id="bidsNow">計算中…</div></div>
+    <div class="row"><div class="k">買い板の合計（あと）</div><div class="v" id="bidsAfter">計算中…</div></div>
+    <p class="note">範囲は、いまの価格のすぐ下から、約3割下までです。開くたび、いまの価格と残高で作り直します。</p>
+  </div>
+
+  <h2>PAT を売ったときの価格の目安</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>売る量</th><th class="r">いま</th><th class="r">置きあと</th></tr></thead>
+      <tbody id="sells"></tbody>
+    </table>
+    <p class="note">ドルは、いまの NVDA と ETH の値段がそのままの場合の目安です。</p>
+  </div>
+
+  <h2>送る</h2>
+  <div class="card">
+    <div id="problems"></div>
+    <div id="sim" class="sim">準備中…</div>
+    <p id="deadline" class="note"></p>
+    <p class="muted">MetaMask に出る内容: 宛先 <b>0x58daec…4fa7</b>（Uniswap の PositionManager）、送金額 <b>0 ETH</b>。これ以外の宛先や金額なら、確認を押さないでください。</p>
+    <button id="send" class="primary" disabled>事前チェックして、MetaMask で署名する</button>
+    <button id="reload" class="secondary">最新の状態で作り直す</button>
+    <p id="wallet"></p>
+    <div id="result"></div>
+  </div>
+  <script src="./app.js?v=20261118n1"></script>
+</body>
+</html>
